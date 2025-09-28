@@ -11,16 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('organizers', function (Blueprint $table) {
-            $table->id(); // PK otomatis "id"
-            $table->string('nama');
-            $table->string('password');
-            $table->string('no_hp');
-            $table->string('email')->unique();
-            $table->date('tanggal_daftar');
+        Schema::create('roles', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();       // e.g. organizer, attendee
+            $table->string('display_name');
+            $table->text('description')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
-
     }
 
     /**
@@ -28,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('organizers');
+        Schema::dropIfExists('roles');
     }
 };
