@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo; // Tambahkan ini jika belum ada
+use App\Models\Role; // Tambahkan ini jika belum ada
 
 class User extends Authenticatable
 {
@@ -30,23 +32,44 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'tanggal_daftar' => 'date', // Pastikan tanggal_daftar dicast ke 'date' jika perlu
         ];
     }
 
     /** ===================== RELASI ROLE ===================== */
-    public function role()
+    
+    // Gunakan type hinting BelongsTo
+    public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
     }
 
+    /**
+     * Memeriksa apakah pengguna memiliki permission tertentu.
+     * Admin selalu true. Role lain dicek melalui relasi.
+     */
     public function hasPermission(string $permission): bool
     {
+        // Jika pengguna adalah Admin, langsung berikan akses (bypass check)
+        if ($this->isAdmin()) {
+            return true; 
+        }
+
+        // Cek permission melalui Role (menggunakan method hasPermission di Model Role)
         return $this->role?->hasPermission($permission) ?? false;
     }
 
     public function getRoleName(): string
     {
         return $this->role?->name ?? 'No Role';
+    }
+
+    /** ===================== HELPER UNTUK ROLE ===================== */
+
+    // Tambahkan Helper untuk Admin
+    public function isAdmin(): bool
+    {
+        return $this->getRoleName() === 'admin';
     }
 
     public function isOrganizer(): bool

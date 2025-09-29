@@ -33,7 +33,8 @@ class RegisteredUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'phone' => 'required|string|max:20',
-            'role' => 'required|in:attendee,organizer',
+            // Memastikan role yang diinput adalah salah satu dari 'attendee' atau 'organizer'
+            'role' => 'required|in:attendee,organizer', 
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -51,6 +52,13 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
         Auth::login($user);
 
-        return redirect('/dashboard');
+        // LOGIKA REDIRECT BERDASARKAN ROLE YANG BARU SAJA DIPILIH
+        if ($request->role === 'organizer') {
+            // Arahkan Organizer ke halaman manajemen event (events.index)
+            return redirect()->intended(route('events.index'));
+        }
+
+        // Default: Arahkan Attendee ke dashboard umum
+        return redirect()->intended(route('dashboard'));
     }
 }

@@ -7,25 +7,36 @@ use Illuminate\Database\Seeder;
 
 class RoleSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        $roles = [
+        Role::firstOrCreate(
+            ['name' => 'admin'],
             [
-                'name' => 'organizer',
+                'display_name' => 'System Administrator',
+                'description' => 'User with full access to manage system settings and content.',
+                'is_active' => 1
+            ]
+        );
+        
+        Role::firstOrCreate(
+            ['name' => 'organizer'],
+            [
                 'display_name' => 'Event Organizer',
                 'description' => 'User who can create and manage events',
-                'is_active' => true,
-            ],
-            [
-                'name' => 'attendee',
-                'display_name' => 'Event Attendee',
-                'description' => 'User who can view and join events',
-                'is_active' => true,
-            ],
-        ];
+                'is_active' => 1
+            ]
+        );
 
-        foreach ($roles as $role) {
-            Role::create($role);
-        }
+        Role::firstOrCreate(
+            ['name' => 'attendee'],
+            [
+                'display_name' => 'Event Attendee',
+                'description' => 'User who can join/book events and leave reviews',
+                'is_active' => 1
+            ]
+        );
     }
 }
