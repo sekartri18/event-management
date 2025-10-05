@@ -10,6 +10,16 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-xl border border-gray-100">
                 
+                {{-- BLOK GAMBAR UTAMA (Perbaikan: Menggunakan Storage::url) --}}
+                @if ($event->gambar)
+                    <img src="{{ Storage::url($event->gambar) }}" alt="{{ $event->nama_event }}" class="w-full h-80 object-cover rounded-t-xl">
+                @else
+                    <div class="w-full h-80 bg-gray-100 flex items-center justify-center rounded-t-xl border-b border-gray-200">
+                        <p class="text-gray-500 text-lg">Tidak Ada Gambar Utama</p>
+                    </div>
+                @endif
+
+                
                 {{-- Event Header --}}
                 <div class="p-6 sm:px-10 sm:py-8 bg-indigo-50 border-b border-indigo-200">
                     <h1 class="text-3xl font-extrabold text-indigo-800 mb-2 leading-tight">

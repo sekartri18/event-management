@@ -4,31 +4,30 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Models\User;
+use App\Models\Event;
+use App\Models\Review;
 
 class AdminController extends Controller
 {
     /**
      * Menampilkan dashboard utama untuk System Administrator.
-     * Rute ini dilindungi oleh middleware 'permission:manage_users'
-     * dan merupakan halaman tujuan redirect setelah Admin login.
+     * Mengambil data statistik penting dari database.
      */
     public function index(): View
     {
-        // Pastikan file view ini ada di: resources/views/admin/dashboard.blade.php
-        return view('admin.dashboard');
+        // Mengambil data statistik aktual dari database
+        $totalUsers = User::count();
+        $totalEvents = Event::count();
+        $totalReviews = Review::count();
+
+        // Mengirimkan data statistik ke view
+        return view('admin.dashboard', [
+            'totalUsers' => $totalUsers,
+            'totalEvents' => $totalEvents,
+            'totalReviews' => $totalReviews,
+        ]);
     }
 
-    // Anda bisa menambahkan method lain di sini, seperti:
-    
-    // public function manageUsers(): View 
-    // {
-    //     // Logika untuk menampilkan daftar dan mengelola pengguna
-    //     return view('admin.users.index');
-    // }
-
-    // public function manageEvents(): View
-    // {
-    //     // Logika untuk meninjau semua event di sistem
-    //     return view('admin.events.index');
-    // }
+    // Anda bisa menambahkan method lain di sini
 }

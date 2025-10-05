@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\UserController; // <<< BARU: Pastikan Controller ini diimpor!
 use Illuminate\Support\Facades\Route;
 
 // Rute Halaman Utama (Welcome Page)
@@ -77,9 +78,10 @@ Route::middleware('auth')->group(function () {
         // Admin Dashboard
         Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
         
-        // Contoh penambahan rute untuk User Management (CRUD User)
-        // Jika Anda memiliki UserController untuk Admin:
-        // Route::resource('users', UserController::class); 
+        // RUTE BARU: Manajemen Pengguna (Menggunakan UserController)
+        // Kita hanya mengizinkan aksi index, edit, update, dan destroy.
+        Route::resource('users', UserController::class)->only(['index', 'edit', 'update', 'destroy']);
+        
     });
 });
 

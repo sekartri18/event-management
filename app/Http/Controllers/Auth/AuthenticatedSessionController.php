@@ -20,7 +20,7 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request, including role-based redirect.
+     * Handle an incoming authentication request.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
@@ -28,35 +28,31 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Ambil objek pengguna yang baru login
         $user = $request->user();
 
         // ===============================================
         // LOGIKA REDIRECT BERDASARKAN ROLE
         // ===============================================
 
-        // 1. Cek Admin sebagai prioritas tertinggi
+        // 1. Redirect Admin ke Admin Panel Dashboard
         if ($user->isAdmin()) {
-            // Arahkan System Administrator ke dashboard khusus Admin
             return redirect()->intended(route('admin.dashboard')); 
         }
 
-        // 2. Cek Organizer
+        // 2. Redirect Organizer ke Event Management Index (Fokus utama Organizer)
         if ($user->isOrganizer()) {
-            // Arahkan Event Organizer ke halaman Event mereka
             return redirect()->intended(route('events.index')); 
         } 
         
-        // 3. Cek Attendee
+        // 3. Redirect Attendee ke Dashboard Umum (Fokus utama Attendee)
         if ($user->isAttendee()) {
-            // Arahkan Event Attendee ke dashboard umum
             return redirect()->intended(route('dashboard'));
         }
 
-        // Redirect Default (Fallback)
+        // Redirect Default (Fallback jika role tidak terdefinisi)
         return redirect()->intended(route('dashboard', absolute: false));
     }
-
+    
     /**
      * Destroy an authenticated session.
      */

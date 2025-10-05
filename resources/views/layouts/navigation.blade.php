@@ -1,38 +1,64 @@
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100 shadow-md">
-    <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
-                <!-- Logo Event -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" class="text-xl font-bold text-indigo-600 hover:text-indigo-800 transition duration-150 ease-in-out">
                         Event<span class="text-purple-500">Pro</span>
                     </a>
                 </div>
 
-                <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="text-gray-700 hover:text-indigo-600 hover:border-indigo-400 focus:border-indigo-700">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-
                     @auth
-                        @if(Auth::user()->hasPermission('view_event'))
-                            <x-nav-link :href="route('events.index')" :active="request()->routeIs('events.index') || request()->routeIs('events.create')" class="text-gray-700 hover:text-indigo-600 hover:border-indigo-400 focus:border-indigo-700">
-                                {{ __('Manajemen Event') }}
-                            </x-nav-link>
-                        @endif
+                        @php
+                            $user = Auth::user();
+                        @endphp
 
-                        @if(Auth::user()->isAdmin())
-                            <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')" class="text-gray-700 hover:text-purple-600 hover:border-purple-400 focus:border-purple-700">
+                        {{-- LINK KHUSUS ADMIN (Akses Tertinggi) --}}
+                        @if($user->isAdmin())
+                            <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')" class="font-bold text-red-700 hover:text-red-600 hover:border-red-400 focus:border-red-700">
                                 {{ __('Admin Panel') }}
                             </x-nav-link>
+                            {{-- Admin juga bisa mengakses Semua Event --}}
+                            <x-nav-link :href="route('events.index')" :active="request()->routeIs('events.index') && !request()->routeIs('events.create')" class="text-gray-700 hover:text-indigo-600 hover:border-indigo-400 focus:border-indigo-700">
+                                {{ __('Semua Event') }}
+                            </x-nav-link>
                         @endif
+
+                        {{-- LINK KHUSUS ORGANIZER (Bukan Admin) --}}
+                        @if($user->isOrganizer() && !$user->isAdmin())
+                            {{-- FOKUS UTAMA ORGANIZER: Manajemen Event --}}
+                            <x-nav-link :href="route('events.index')" :active="request()->routeIs('events.index')" class="font-bold text-indigo-700 hover:text-indigo-600 hover:border-indigo-400 focus:border-indigo-700">
+                                {{ __('Manajemen Event') }}
+                            </x-nav-link>
+                            
+                            {{-- TAMBAHAN: Link Langsung Buat Event (Aksi Utama Organizer) --}}
+                            @can('create_event')
+                                <x-nav-link :href="route('events.create')" :active="request()->routeIs('events.create')" class="text-green-600 hover:text-green-700 hover:border-green-400 focus:border-green-700 font-semibold">
+                                    {{ __('+ Buat Event') }}
+                                </x-nav-link>
+                            @endcan
+                        @endif
+                        
+                        {{-- LINK KHUSUS ATTENDEE (Bukan Admin/Organizer) --}}
+                        @if($user->isAttendee() && !$user->isOrganizer() && !$user->isAdmin())
+                            {{-- FOKUS UTAMA ATTENDEE: Dashboard Umum --}}
+                            <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="font-bold text-blue-700 hover:text-blue-600 hover:border-blue-400 focus:border-blue-700">
+                                {{ __('Dashboard') }}
+                            </x-nav-link>
+                            <x-nav-link :href="route('events.index')" :active="request()->routeIs('events.index')" class="text-gray-700 hover:text-indigo-600 hover:border-indigo-400 focus:border-indigo-700">
+                                {{ __('Cari Event') }}
+                            </x-nav-link>
+                        @endif
+                    @else
+                        {{-- Tampilan Default untuk Guest (Belum Login) --}}
+                        <x-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')">
+                            {{ __('Beranda') }}
+                        </x-nav-link>
                     @endauth
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
@@ -54,7 +80,6 @@
                             {{ __('Profil Pengguna') }}
                         </x-dropdown-link>
 
-                        <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
@@ -67,7 +92,6 @@
                 </x-dropdown>
             </div>
 
-            <!-- Hamburger (Mobile Menu) -->
             <div class="-me-2 flex items-center sm:hidden">
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
@@ -79,27 +103,57 @@
         </div>
     </div>
 
-    <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
             @auth
-                @if(Auth::user()->hasPermission('view_event'))
-                    <x-responsive-nav-link :href="route('events.index')" :active="request()->routeIs('events.index') || request()->routeIs('events.create')">
-                        {{ __('Manajemen Event') }}
-                    </x-responsive-nav-link>
-                @endif
-                @if(Auth::user()->isAdmin())
-                    <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')" class="text-purple-600">
+                @php
+                    $user = Auth::user();
+                @endphp
+                
+                {{-- LINK KHUSUS ADMIN (Mobile) --}}
+                @if($user->isAdmin())
+                    <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')" class="text-red-600 font-bold">
                         {{ __('Admin Panel') }}
                     </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('events.index')" :active="request()->routeIs('events.index')">
+                        {{ __('Semua Event') }}
+                    </x-responsive-nav-link>
                 @endif
+
+                {{-- LINK KHUSUS ORGANIZER (Mobile) --}}
+                @if($user->isOrganizer() && !$user->isAdmin())
+                    {{-- FOKUS UTAMA ORGANIZER: Manajemen Event --}}
+                    <x-responsive-nav-link :href="route('events.index')" :active="request()->routeIs('events.index')" class="text-indigo-600 font-bold">
+                        {{ __('Manajemen Event') }}
+                    </x-responsive-nav-link>
+                    
+                    {{-- TAMBAHAN: Link Langsung Buat Event --}}
+                    @can('create_event')
+                        <x-responsive-nav-link :href="route('events.create')" :active="request()->routeIs('events.create')" class="text-green-600 font-semibold">
+                            {{ __('+ Buat Event Baru') }}
+                        </x-responsive-nav-link>
+                    @endcan
+                @endif
+                
+                {{-- LINK KHUSUS ATTENDEE (Mobile) --}}
+                @if($user->isAttendee() && !$user->isOrganizer() && !$user->isAdmin())
+                    {{-- FOKUS UTAMA ATTENDEE: Dashboard Umum --}}
+                    <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="text-blue-600 font-bold">
+                        {{ __('Dashboard') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('events.index')" :active="request()->routeIs('events.index')">
+                        {{ __('Cari Event') }}
+                    </x-responsive-nav-link>
+                @endif
+
+            @else
+                {{-- Tampilan Default untuk Guest (Belum Login) --}}
+                <x-responsive-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')">
+                    {{ __('Beranda') }}
+                </x-responsive-nav-link>
             @endauth
         </div>
 
-        <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">
                 <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
@@ -111,7 +165,6 @@
                     {{ __('Profil Pengguna') }}
                 </x-responsive-nav-link>
 
-                <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')"
