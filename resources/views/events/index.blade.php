@@ -1,4 +1,3 @@
-{{-- resources/views/events/index.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
@@ -57,6 +56,60 @@
                 </div>
             @endif
 
+            {{-- START: FORM PENCARIAN DAN FILTER BARU (Diperbarui) --}}
+            <div class="mb-6 p-4 bg-white shadow-md rounded-lg">
+                {{-- Menggunakan grid 4 kolom untuk kontrol layout --}}
+                <form method="GET" action="{{ route('events.index') }}" class="grid grid-cols-1 gap-4 md:grid-cols-4 items-end">
+                    
+                    {{-- Search Input (Nama Event) - Mengambil 2 kolom --}}
+                    <div class="md:col-span-2">
+                        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Cari Event (Nama)</label>
+                        <x-text-input type="text" name="search" id="search" 
+                                      value="{{ request('search') }}" 
+                                      placeholder="Cari nama event..." 
+                                      class="w-full" />
+                    </div>
+                    
+                    {{-- Filter Status - Mengambil 1 kolom --}}
+                    <div class="md:col-span-1">
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Filter Status</label>
+                        <select name="status" id="status" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full">
+                            <option value="">Semua Status</option>
+                            <option value="upcoming" {{ request('status') == 'upcoming' ? 'selected' : '' }}>Upcoming</option>
+                            <option value="ongoing" {{ request('status') == 'ongoing' ? 'selected' : '' }}>Ongoing</option>
+                            <option value="finished" {{ request('status') == 'finished' ? 'selected' : '' }}>Finished</option>
+                        </select>
+                    </div>
+
+                    {{-- Tombol Submit dan Reset - Mengambil 1 kolom, diatur di pojok kanan --}}
+                    {{-- flex space-x-2 dan justify-end memastikan tombol di kanan --}}
+                    <div class="md:col-span-1 flex space-x-2 justify-end"> 
+                        
+                        {{-- 1. Tombol Reset --}}
+                        <a href="{{ route('events.index') }}" 
+                           class="bg-white text-gray-800 px-6 py-2 rounded-md hover:bg-gray-100 text-center transition font-semibold border border-gray-400 shadow-sm whitespace-nowrap">
+                            Reset
+                        </a>
+
+                        {{-- 2. Tombol Cari --}}
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition font-semibold border border-blue-600 shadow-md whitespace-nowrap">
+                            Cari
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {{-- END: FORM PENCARIAN DAN FILTER BARU --}}
+
+            {{-- Menampilkan pesan jika tidak ada event yang ditemukan setelah filter --}}
+            @if(request()->hasAny(['search', 'status', 'location']) && $events->isEmpty())
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center mb-6">
+                    <p class="text-red-500 text-lg">Tidak ada event yang ditemukan dengan kriteria tersebut. 😥</p>
+                    <a href="{{ route('events.index') }}" class="text-indigo-600 hover:text-indigo-800 mt-2 inline-block font-medium">Tampilkan Semua Event</a>
+                </div>
+            @endif
+
+
+            {{-- START: CARD VIEW (Mobile Only, dari kode lama Anda) --}}
             @forelse($events as $event)
                 @php
                     $statusColor = match($event->status) {
@@ -81,9 +134,9 @@
                             <img src="{{ Storage::url($event->gambar) }}" alt="{{ $event->nama_event }}" class="w-full h-full object-cover">
                         </div>
                     @else
-                         <div class="mb-4 h-40 bg-gray-100 flex items-center justify-center rounded-lg border border-dashed border-gray-300">
-                            <p class="text-gray-500 text-sm">Tidak Ada Gambar</p>
-                        </div>
+                          <div class="mb-4 h-40 bg-gray-100 flex items-center justify-center rounded-lg border border-dashed border-gray-300">
+                                <p class="text-gray-500 text-sm">Tidak Ada Gambar</p>
+                          </div>
                     @endif
                     
                     <div class="flex justify-between items-start mb-3">
@@ -117,27 +170,27 @@
                     </div>
                 </div>
             @empty
-                {{-- Empty State UNTUK ORGANIZER (DIPERBAIKI JADI TOMBOL) --}}
-                @if(Auth::user()->isOrganizer())
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center border-l-4 border-indigo-500">
-                        <p class="text-gray-500 text-lg mb-4">Anda belum memiliki event yang terdaftar.</p>
-                        
-                        {{-- TOMBOL CREATE EVENT DI EMPTY STATE --}}
-                        <a href="{{ route('events.create') }}">
-                            <x-primary-button>
-                                {{ __('Buat Event Anda Sekarang!') }}
-                            </x-primary-button>
-                        </a>
-                    </div>
-                @else
-                    {{-- Empty State untuk Attendee (Jika tidak ada event sama sekali) --}}
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
-                        <p class="text-gray-500 text-lg">Belum ada event yang tersedia saat ini.</p>
-                    </div>
+                {{-- Empty State (Mobile) --}}
+                @if(!request()->hasAny(['search', 'status', 'location']))
+                    @if(Auth::user()->isOrganizer())
+                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center border-l-4 border-indigo-500 mb-6 lg:hidden">
+                            <p class="text-gray-500 text-lg mb-4">Anda belum memiliki event yang terdaftar.</p>
+                            <a href="{{ route('events.create') }}">
+                                <x-primary-button>
+                                    {{ __('Buat Event Anda Sekarang!') }}
+                                </x-primary-button>
+                            </a>
+                        </div>
+                    @elseif(!Auth::user()->isOrganizer() && !Auth::user()->isAdmin()) 
+                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center mb-6 lg:hidden">
+                            <p class="text-gray-500 text-lg">Belum ada event yang tersedia saat ini.</p>
+                        </div>
+                    @endif
                 @endif
             @endforelse
+            {{-- END: CARD VIEW --}}
 
-            {{-- Table View (Desktop Only) --}}
+            {{-- START: Table View (Desktop Only, dari kode lama Anda) --}}
             <div class="hidden lg:block bg-white overflow-hidden shadow-lg sm:rounded-lg">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -199,7 +252,14 @@
                             @empty
                                 <tr>
                                     <td colspan="6" class="px-6 py-8 whitespace-nowrap text-lg text-gray-500 text-center">
-                                        <p>Belum ada event yang terdaftar dalam sistem.</p>
+                                        @if(request()->hasAny(['search', 'status', 'location']))
+                                            Tidak ada event yang ditemukan dengan kriteria tersebut.
+                                        @elseif(Auth::user()->isOrganizer())
+                                            Anda belum memiliki event yang terdaftar.
+                                            <a href="{{ route('events.create') }}" class="text-indigo-600 hover:text-indigo-800 mt-2 inline-block font-medium">Buat Event Sekarang!</a>
+                                        @else
+                                            Belum ada event yang tersedia saat ini.
+                                        @endif
                                     </td>
                                 </tr>
                             @endforelse
@@ -207,6 +267,7 @@
                     </table>
                 </div>
             </div>
+            {{-- END: Table View --}}
             
         </div>
     </div>

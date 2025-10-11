@@ -7,34 +7,59 @@ use App\Models\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage; 
 use Illuminate\Support\Facades\Auth; 
-// Tidak perlu 'use Illuminate\Support\Collection;' karena kita pakai helper collect()
 
 class EventController extends Controller
 {
-    // List semua event (untuk attendee, organizer, dan admin)
-    public function index()
+    /**
+     * Tampilkan daftar event, dengan dukungan pencarian dan filter.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
+    public function index(Request $request)
     {
         // 1. Ambil user yang sedang login
         $user = Auth::user(); 
         
-        // 2. Inisialisasi $events menggunakan helper function collect()
-        $events = collect(); 
+        // 2. Mulai Query Builder
+        $query = Event::query()->orderBy('tanggal_mulai', 'asc');
         
-        // 3. Logika pemfilteran event 
+        // 3. Logika pemfilteran event berdasarkan Role (Organizer hanya lihat miliknya)
         if ($user) {
             if ($user->isOrganizer()) {
                 // Organizer hanya melihat event yang dia buat
-                // PASTIKAN: Menggunakan kolom 'organizer_id'
-                $events = Event::where('organizer_id', $user->id)
-                                ->orderBy('tanggal_mulai', 'asc')
-                                ->get();
-            } else {
-                // Admin dan Attendee melihat semua event
-                $events = Event::orderBy('tanggal_mulai', 'asc')->get();
+                $query->where('organizer_id', $user->id);
             }
+            // Admin dan Attendee melihat semua event
         } 
         
-        // 4. Kirim variabel $events ke view
+        // ==============================================
+        // LOGIKA PENAMBAHAN FILTER (UNTUK SEARCH & FILTER ATTENDEE)
+        // ==============================================
+
+        // Filter 1: Pencarian berdasarkan Nama Event (Search Bar)
+        if ($search = $request->query('search')) {
+            $query->where('nama_event', 'LIKE', '%' . $search . '%');
+        }
+
+        // Filter 2: Filter berdasarkan Status
+        if ($status = $request->query('status')) {
+            // Pastikan status yang dicari valid
+            if (in_array($status, ['upcoming', 'ongoing', 'finished'])) {
+                $query->where('status', $status);
+            }
+        }
+        
+        // Filter 3: Filter berdasarkan Lokasi
+        // Tambahkan filter ini jika Anda ingin mencar berdasarkan Lokasi juga.
+        if ($location = $request->query('location')) {
+            $query->where('lokasi', 'LIKE', '%' . $location . '%');
+        }
+
+        // 4. Eksekusi query
+        $events = $query->get();
+        
+        // 5. Kirim variabel $events ke view
         return view('events.index', compact('events'));
     }
 

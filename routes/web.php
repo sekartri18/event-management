@@ -3,7 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\UserController; // <<< BARU: Pastikan Controller ini diimpor!
+use App\Http\Controllers\UserController; 
+use App\Http\Controllers\BookingController;
 use Illuminate\Support\Facades\Route;
 
 // Rute Halaman Utama (Welcome Page)
@@ -68,6 +69,22 @@ Route::middleware('auth')->group(function () {
         
     // Catatan: show route tidak perlu di-override, akan menggunakan permission default 'view_event'
     
+    // Rute Booking 
+    // Daftar riwayat booking attendee
+    Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
+    
+    // 1. Proses Initial Booking (dari form Beli Sekarang)
+    Route::post('/events/{event}/buy', [BookingController::class, 'store'])->name('bookings.store');
+
+    // 2. Halaman Checkout/Pilih Pembayaran (GET)
+    Route::get('/bookings/{booking}/checkout', [BookingController::class, 'showCheckout'])->name('bookings.checkout'); // <-- BARU
+
+    // 3. Proses Pembayaran (Simulasi mengubah status booking) (POST)
+    Route::post('/bookings/{booking}/pay', [BookingController::class, 'processPayment'])->name('bookings.pay'); // <-- BARU
+
+    // 4. Konfirmasi/Tiket Jadi (Setelah Pembayaran Sukses)
+    Route::get('/bookings/{booking}/confirmation', [BookingController::class, 'showConfirmation'])->name('bookings.confirmation');
+
 
     // -------------------------------------------------------------
     // RUTE ADMIN AREA (DILINDUNGI OLEH PERMISSION ADMIN)
@@ -83,6 +100,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('users', UserController::class)->only(['index', 'edit', 'update', 'destroy']);
         
     });
+
 });
 
 require __DIR__.'/auth.php';

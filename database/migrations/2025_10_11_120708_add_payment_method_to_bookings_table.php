@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('bookings', function (Blueprint $table) {
+            // Menambahkan kolom payment_method untuk menyimpan metode pembayaran yang dipilih
+            // Kolom ini bersifat nullable untuk kompatibilitas data lama yang mungkin ada.
+            $table->string('payment_method')->nullable()->after('total_amount'); 
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('bookings', function (Blueprint $table) {
+            $table->dropColumn('payment_method');
+        });
+    }
+};
