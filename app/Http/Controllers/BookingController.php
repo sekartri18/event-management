@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str; 
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class BookingController extends Controller
 {
@@ -26,16 +27,19 @@ class BookingController extends Controller
     }
 
     // Perhatikan nama method ini: showConfirmation
-    public function showConfirmation(Booking $booking) 
+    public function showConfirmation(Booking $booking)
     {
-        if (Auth::id() !== $booking->attendee_id || $booking->status_pembayaran !== 'paid') { // Hanya boleh diakses jika PAID
-             return redirect()->route('dashboard')->with('error', 'Akses ditolak atau pesanan belum lunas.');
+        if (Auth::id() !== $booking->attendee_id || $booking->status_pembayaran !== 'paid') {
+            return redirect()->route('dashboard')->with('error', 'Akses ditolak atau pesanan belum lunas.');
         }
 
-        $booking->load('event'); 
-        
-        // Relasi tickets diperlukan di view confirmation
+        // Load relasi yang dibutuhkan
         $booking->load(['tickets.ticketType', 'event']);
+
+        // Generate QR Code SVG untuk setiap tiket di booking ini
+        foreach ($booking->tickets as $ticket) {
+            $ticket->qr_svg = QrCode::size(200)->generate($ticket->qr_code);
+        }
 
         return view('bookings.confirmation', compact('booking'));
     }

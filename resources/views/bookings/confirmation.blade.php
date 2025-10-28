@@ -79,13 +79,14 @@
 
                             {{-- QR Code --}}
                             <div class="text-center mt-6">
-                                <div class="w-48 h-60 bg-gray-100 flex items-center justify-center rounded-xl border border-gray-300 mx-auto">
-                                    <span class="text-lg text-gray-600 font-mono">QR</span>
-                                </div>
-                                <p class="text-xs text-gray-500 font-mono mt-2">
+                              <div class="w-48 h-60 bg-gray-100 flex items-center justify-center rounded-xl border border-gray-300 mx-auto">
+                                 {!! $ticket->qr_svg !!}
+                              </div>
+                              <p class="text-xs text-gray-500 font-mono mt-2">
                                     {{ Str::limit($ticket->qr_code, 20) }}
-                                </p>
+                              </p>
                             </div>
+
 
                             {{-- STATUS CHECK-IN (diletakkan di bawah, bukan di header) --}}
                             <div class="mt-6 pt-4 border-t border-gray-200">
