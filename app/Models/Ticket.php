@@ -11,13 +11,16 @@ class Ticket extends Model
         'ticket_type_id',
         'qr_code',
         'statusCheckIn',
-        'nama_pemegang_tiket', 
+        'nama_pemegang_tiket',
+        'tanggalCheckIn', // <-- TAMBAHKAN BARIS INI
     ];
+
+    // ... existing code ...
 
     public function ticketType() {
         return $this->belongsTo(TicketType::class, 'ticket_type_id');
     }
-    
+
     public function booking() {
         return $this->belongsTo(Booking::class, 'booking_id');
     }
