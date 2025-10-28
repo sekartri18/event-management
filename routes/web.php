@@ -5,7 +5,8 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController; 
 use App\Http\Controllers\BookingController;
-use App\Http\Controllers\TicketTypeController; // PASTIKAN CONTROLLER INI DI-IMPORT
+use App\Http\Controllers\TicketTypeController; 
+use App\Http\Controllers\CheckInController; // <--- BARU: IMPORT CONTROLLER CHECK-IN
 use Illuminate\Support\Facades\Route;
 
 // Rute Halaman Utama (Welcome Page)
@@ -71,11 +72,10 @@ Route::middleware('auth')->group(function () {
     
     // =============================================================
     // RUTE YANG DIPERBAIKI: PENGATURAN TIPE TIKET (NESTED RESOURCE)
-    // Middleware dipindahkan ke sini untuk menghindari error.
     // =============================================================
     Route::resource('events.tickets', TicketTypeController::class)
-         ->except(['show', 'create', 'edit'])
-         ->middleware('permission:edit_event'); // <--- PERBAIKAN UTAMA
+           ->except(['show', 'create', 'edit'])
+           ->middleware('permission:edit_event'); 
 
     // Rute Booking 
     // Daftar riwayat booking attendee
@@ -85,14 +85,34 @@ Route::middleware('auth')->group(function () {
     Route::post('/events/{event}/buy', [BookingController::class, 'store'])->name('bookings.store');
 
     // 2. Halaman Checkout/Pilih Pembayaran (GET)
-    Route::get('/bookings/{booking}/checkout', [BookingController::class, 'showCheckout'])->name('bookings.checkout'); // <-- BARU
+    Route::get('/bookings/{booking}/checkout', [BookingController::class, 'showCheckout'])->name('bookings.checkout'); 
 
     // 3. Proses Pembayaran (Simulasi mengubah status booking) (POST)
-    Route::post('/bookings/{booking}/pay', [BookingController::class, 'processPayment'])->name('bookings.pay'); // <-- BARU
+    Route::post('/bookings/{booking}/pay', [BookingController::class, 'processPayment'])->name('bookings.pay'); 
 
     // 4. Konfirmasi/Tiket Jadi (Setelah Pembayaran Sukses)
     Route::get('/bookings/{booking}/confirmation', [BookingController::class, 'showConfirmation'])->name('bookings.confirmation');
 
+    // =============================================================
+    // RUTE BARU: CHECK-IN EVENT & DAFTAR PESERTA (FOR ORGANIZER) <--- RUTE BARU DITAMBAHKAN DI SINI
+    // =============================================================
+    Route::prefix('events/{event}')->name('events.checkin.')->group(function () {
+        
+        // 1. Daftar Peserta (List Tickets)
+        Route::get('attendees', [CheckInController::class, 'index'])
+            ->name('index')
+            ->middleware('permission:edit_event'); // Menggunakan permission edit_event
+
+        // 2. Halaman Scanner (Form Input QR Code)
+        Route::get('scanner', [CheckInController::class, 'showScanner'])
+            ->name('scanner')
+            ->middleware('permission:edit_event');
+
+        // 3. Proses Check-In (API Endpoint)
+        Route::post('check-in', [CheckInController::class, 'processCheckIn'])
+            ->name('process')
+            ->middleware('permission:edit_event');
+    });
 
     // -------------------------------------------------------------
     // RUTE ADMIN AREA (DILINDUNGI OLEH PERMISSION ADMIN)

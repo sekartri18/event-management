@@ -15,7 +15,7 @@
                     <p>{{ session('success') }}</p>
                 </div>
             @elseif (session('error'))
-                 <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
                     <p>{{ session('error') }}</p>
                 </div>
             @endif
@@ -93,14 +93,33 @@
                                 ✏️ Edit Event
                             </a>
                             
-                            {{-- Tombol Baru: Kelola Tipe Tiket --}}
+                            {{-- Tombol Kelola Tipe Tiket --}}
                             <a href="{{ route('events.tickets.index', $event) }}" 
                                class="w-full inline-flex justify-center items-center px-4 py-2 bg-indigo-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-600 transition shadow-md">
                                 🎫 Kelola Tipe Tiket
                             </a>
+
+                            {{-- ======================================================= --}}
+                            {{--           KODE BARU UNTUK DAFTAR PESERTA & SCANNER      --}}
+                            {{-- ======================================================= --}}
+
+                            {{-- Tombol Daftar Peserta / Attendees List --}}
+                            <a href="{{ route('events.checkin.index', $event) }}" 
+                               class="w-full inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition shadow-md">
+                                👥 Daftar Peserta
+                            </a>
+
+                            {{-- Tombol Scanner / Check-in --}}
+                            <a href="{{ route('events.checkin.scanner', $event) }}" 
+                               class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition shadow-md">
+                                📱 Scan Check-in Tiket
+                            </a>
+
+                            {{-- ======================================================= --}}
+
                         @endcan
 
-                        {{-- Tombol Hapus --}}
+                        {{-- Tombol Hapus (Akses oleh delete policy) --}}
                         @can('delete', $event)
                             <form action="{{ route('events.destroy', $event) }}" method="POST" onsubmit="return confirm('ANDA YAKIN? Menghapus event ini akan menghapus semua tiket dan booking terkait!');">
                                 @csrf
@@ -241,10 +260,13 @@
                                 holderRows.forEach(row => {
                                     const removeButton = row.querySelector('.remove-holder');
                                     if (removeButton) {
+                                        // Sembunyikan tombol hapus jika hanya ada satu baris
                                         if (holderRows.length > 1) {
                                             removeButton.classList.remove('hidden');
+                                            removeButton.style.display = 'block'; // Ensure it's displayed if needed
                                         } else {
                                             removeButton.classList.add('hidden');
+                                            removeButton.style.display = 'none'; // Ensure it's hidden
                                         }
                                     }
                                 });
@@ -283,11 +305,19 @@
                             });
                             
                             // Pasang listener pada baris pertama yang sudah ada di HTML
-                            document.querySelector('.holder-row .remove-holder').addEventListener('click', function() {
-                                this.closest('.holder-row').remove();
-                                updateTotalPrice();
-                            });
-                            document.querySelector('.holder-row .ticket-type-select').addEventListener('change', handleTicketTypeChange);
+                            const firstRemoveButton = document.querySelector('.holder-row .remove-holder');
+                            if(firstRemoveButton) {
+                                firstRemoveButton.addEventListener('click', function() {
+                                    this.closest('.holder-row').remove();
+                                    updateTotalPrice();
+                                });
+                            }
+                            
+                            const firstTicketSelect = document.querySelector('.holder-row .ticket-type-select');
+                            if(firstTicketSelect) {
+                                firstTicketSelect.addEventListener('change', handleTicketTypeChange);
+                            }
+
 
                             updateTotalPrice();
                         });
@@ -299,4 +329,4 @@
     @endif 
     {{-- END: FORM PEMBELIAN TIKET --}}
     
-    </x-app-layout>
+</x-app-layout>
