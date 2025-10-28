@@ -5,17 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\TicketType;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Auth; 
 use Illuminate\Validation\Rule;
 
 class TicketTypeController extends Controller
 {
-    // Memastikan hanya organizer pemilik event yang bisa mengelola tiket
+    // HAPUS BLOCK CONSTRUCT DI BAWAH INI UNTUK MENGHILANGKAN ERROR:
+    /*
     public function __construct()
     {
         // Panggil middleware permission untuk melindungi semua aksi
-        $this->middleware('permission:edit_event');
+        $this->middleware('permission:edit_event'); // <- INI YANG ERROR
     }
+    */
 
     /**
      * Menampilkan daftar tipe tiket dan form tambah untuk event.
@@ -23,8 +25,17 @@ class TicketTypeController extends Controller
     public function index(Event $event)
     {
         // Memastikan hanya organizer pemilik event yang bisa melihat
-        if (Auth()->user()->id !== $event->organizer_id) {
-            abort(403, 'Akses Ditolak. Anda bukan penyelenggara event ini.');
+        // Pengecekan ini tetap harus ada, meskipun ada permission:edit_event, untuk memastikan dia adalah *owner* event tersebut.
+        if (Auth::user()->id !== $event->organizer_id) {
+            // Karena sudah ada middleware permission:edit_event di routing,
+            // baris ini mungkin tidak tercapai oleh non-organizer (kecuali Admin).
+            // Tambahkan pengecekan if (!Auth::user()->isAdmin() && Auth::user()->id !== $event->organizer_id) 
+            // jika Anda ingin Admin juga bisa mengelola (berdasarkan EventPolicy.php, Admin BYPASS)
+            
+            // Menggunakan abort(403) saja sudah cukup.
+            if (!Auth::user()->isAdmin() && Auth::user()->id !== $event->organizer_id) {
+                abort(403, 'Akses Ditolak. Anda bukan penyelenggara event ini.');
+            }
         }
 
         $ticketTypes = $event->ticketTypes()->orderBy('harga', 'asc')->get();
@@ -38,7 +49,7 @@ class TicketTypeController extends Controller
     public function store(Request $request, Event $event)
     {
         // Memastikan hanya organizer pemilik event yang bisa menyimpan
-        if (Auth()->user()->id !== $event->organizer_id) {
+        if (Auth::user()->id !== $event->organizer_id) {
             abort(403, 'Akses Ditolak.');
         }
         
@@ -60,7 +71,7 @@ class TicketTypeController extends Controller
     public function update(Request $request, Event $event, TicketType $ticket)
     {
         // Memastikan kepemilikan
-        if (Auth()->user()->id !== $event->organizer_id) {
+        if (Auth::user()->id !== $event->organizer_id) {
             abort(403, 'Akses Ditolak.');
         }
 
@@ -82,7 +93,7 @@ class TicketTypeController extends Controller
     public function destroy(Event $event, TicketType $ticket)
     {
         // Memastikan kepemilikan
-        if (Auth()->user()->id !== $event->organizer_id) {
+        if (Auth::user()->id !== $event->organizer_id) {
             abort(403, 'Akses Ditolak.');
         }
         

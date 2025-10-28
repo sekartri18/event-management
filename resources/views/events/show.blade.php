@@ -86,11 +86,17 @@
                     <div class="md:col-span-1 border-t md:border-t-0 md:border-l border-gray-100 pt-6 md:pt-0 md:pl-8 space-y-4">
                         <h3 class="text-lg font-semibold text-gray-800 mb-3">Aksi Event</h3>
 
-                        {{-- Tombol Edit --}}
+                        {{-- Tombol Edit dan Kelola Tiket (Hanya untuk organizer yang punya akses) --}}
                         @can('update', $event)
                             <a href="{{ route('events.edit', $event) }}" 
                                class="w-full inline-flex justify-center items-center px-4 py-2 bg-yellow-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-600 transition shadow-md">
                                 ✏️ Edit Event
+                            </a>
+                            
+                            {{-- Tombol Baru: Kelola Tipe Tiket --}}
+                            <a href="{{ route('events.tickets.index', $event) }}" 
+                               class="w-full inline-flex justify-center items-center px-4 py-2 bg-indigo-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-600 transition shadow-md">
+                                🎫 Kelola Tipe Tiket
                             </a>
                         @endcan
 
@@ -150,7 +156,7 @@
                                                 <option value="" data-price="0">-- Pilih Jenis Tiket --</option>
                                                 @foreach($event->ticketTypes as $type)
                                                     <option value="{{ $type->id }}" data-price="{{ $type->price }}" {{ $type->available_quantity <= 0 ? 'disabled' : '' }}>
-                                                        {{ $type->name }} (Rp{{ number_format($type->price, 0, ',', '.') }})
+                                                        {{ $type->nama_tiket }} (Rp{{ number_format($type->price, 0, ',', '.') }})
                                                         @if($type->available_quantity <= 0) (HABIS) @endif
                                                     </option>
                                                 @endforeach
@@ -196,7 +202,7 @@
                             // FIX: ticketOptionsHtml sekarang dibuat dengan benar
                             const ticketOptionsHtml = `@foreach($event->ticketTypes as $type)
                                 <option value="{{ $type->id }}" data-price="{{ $type->price }}" {{ $type->available_quantity <= 0 ? 'disabled' : '' }}>
-                                    {{ $type->name }} (Rp{{ number_format($type->price, 0, ',', '.') }})
+                                    {{ $type->nama_tiket }} (Rp{{ number_format($type->price, 0, ',', '.') }})
                                     @if($type->available_quantity <= 0) (HABIS) @endif
                                 </option>
                             @endforeach`;

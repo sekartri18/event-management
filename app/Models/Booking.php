@@ -2,54 +2,49 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Ticket; 
 
 class Booking extends Model
 {
+    use HasFactory;
+
     /**
-     * Kolom yang dapat diisi secara massal.
-     * MENGGUNAKAN NAMA KOLOM DARI DB: attendee_id, status_pembayaran, tanggal_booking, jumlah_tiket.
+     * The attributes that are mass assignable.
+     * Mengizinkan pengisian kolom yang digunakan dalam BookingController::store()
      */
     protected $fillable = [
-        'attendee_id',          
+        'attendee_id',
         'event_id',
-        'status_pembayaran',    
-        'tanggal_booking',      
-        'jumlah_tiket',         
-        'total_amount',         
-        'payment_method',      
+        'total_amount',
+        'status_pembayaran',
+        'tanggal_booking',
+        'jumlah_tiket',
+        'payment_method', // Digunakan di processPayment
     ];
 
-    // --- ACCESSOR/MUTATOR UNTUK KEMUDAHAN KODE ---
-
-    // Memungkinkan penggunaan $booking->status
-    public function getStatusAttribute()
-    {
-        return $this->attributes['status_pembayaran'] ?? null;
-    }
-
-    public function setStatusAttribute($value)
-    {
-        $this->attributes['status_pembayaran'] = $value;
-    }
-
     /**
-     * Relasi: Booking memiliki banyak Tiket.
+     * The attributes that should be cast to native types.
      */
-    public function tickets()
-    {
-        // FIX: Memberikan nama Model Ticket secara eksplisit.
-        return $this->hasMany(Ticket::class, 'booking_id'); 
-    }
-    
-    public function user()
+    protected $casts = [
+        'tanggal_booking' => 'datetime',
+    ];
+
+    // Relasi ke user (attendee)
+    public function attendee()
     {
         return $this->belongsTo(User::class, 'attendee_id');
     }
 
+    // Relasi ke event
     public function event()
     {
         return $this->belongsTo(Event::class, 'event_id');
+    }
+
+    // Relasi ke tiket (banyak tiket dalam satu booking)
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class, 'booking_id');
     }
 }

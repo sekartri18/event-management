@@ -5,6 +5,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController; 
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\TicketTypeController; // PASTIKAN CONTROLLER INI DI-IMPORT
 use Illuminate\Support\Facades\Route;
 
 // Rute Halaman Utama (Welcome Page)
@@ -55,12 +56,10 @@ Route::middleware('auth')->group(function () {
         ->name('events.store')
         ->middleware('permission:create_event'); // Create logic
     
-    // PERBAIKAN: Hapus middleware permission:update_event
     // Otorisasi Update event akan di handle oleh EventPolicy (owner + permission)
     Route::get('/events/{event}/edit', [EventController::class, 'edit'])
         ->name('events.edit'); 
     
-    // PERBAIKAN: Hapus middleware permission:update_event
     Route::patch('/events/{event}', [EventController::class, 'update'])
         ->name('events.update');
         
@@ -70,6 +69,14 @@ Route::middleware('auth')->group(function () {
         
     // Catatan: show route tidak perlu di-override, akan menggunakan permission default 'view_event'
     
+    // =============================================================
+    // RUTE YANG DIPERBAIKI: PENGATURAN TIPE TIKET (NESTED RESOURCE)
+    // Middleware dipindahkan ke sini untuk menghindari error.
+    // =============================================================
+    Route::resource('events.tickets', TicketTypeController::class)
+         ->except(['show', 'create', 'edit'])
+         ->middleware('permission:edit_event'); // <--- PERBAIKAN UTAMA
+
     // Rute Booking 
     // Daftar riwayat booking attendee
     Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
