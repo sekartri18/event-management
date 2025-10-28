@@ -1,7 +1,4 @@
-{{-- File: resources/views/events/show.blade.php --}}
-
-{{-- Menggunakan layout Admin/Organizer untuk konsistensi manajemen --}}
-<x-admin-app-layout> 
+<x-app-layout>
     
     <x-slot name="header">
         <h2 class="font-extrabold text-2xl text-gray-800 leading-tight">
@@ -296,4 +293,4 @@
     @endif 
     {{-- END: FORM PEMBELIAN TIKET --}}
     
-</x-admin-app-layout>
+    </x-app-layout>

@@ -1,4 +1,3 @@
-{{-- resources/views/events/tickets/index.blade.php (File Baru) --}}
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-extrabold text-2xl text-gray-800 leading-tight">

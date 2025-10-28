@@ -55,13 +55,14 @@ Route::middleware('auth')->group(function () {
         ->name('events.store')
         ->middleware('permission:create_event'); // Create logic
     
+    // PERBAIKAN: Hapus middleware permission:update_event
+    // Otorisasi Update event akan di handle oleh EventPolicy (owner + permission)
     Route::get('/events/{event}/edit', [EventController::class, 'edit'])
-        ->name('events.edit')
-        ->middleware('permission:update_event'); // Update form
+        ->name('events.edit'); 
     
+    // PERBAIKAN: Hapus middleware permission:update_event
     Route::patch('/events/{event}', [EventController::class, 'update'])
-        ->name('events.update')
-        ->middleware('permission:update_event'); // Update logic
+        ->name('events.update');
         
     Route::delete('/events/{event}', [EventController::class, 'destroy'])
         ->name('events.destroy')
