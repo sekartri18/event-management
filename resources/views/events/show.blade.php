@@ -1,4 +1,8 @@
-<x-app-layout>
+{{-- File: resources/views/events/show.blade.php --}}
+
+{{-- Menggunakan layout Admin/Organizer untuk konsistensi manajemen --}}
+<x-admin-app-layout> 
+    
     <x-slot name="header">
         <h2 class="font-extrabold text-2xl text-gray-800 leading-tight">
             {{ __('Detail Event') }}
@@ -6,8 +10,19 @@
     </x-slot>
 
     {{-- START: DETAIL EVENT --}}
-    <div class="py-8">
+    <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            {{-- Menampilkan pesan sukses/error dari Controller (misal setelah Delete Event) --}}
+            @if (session('success'))
+                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md" role="alert">
+                    <p>{{ session('success') }}</p>
+                </div>
+            @elseif (session('error'))
+                 <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
+                    <p>{{ session('error') }}</p>
+                </div>
+            @endif
+            
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-xl border border-gray-100">
                 
                 {{-- BLOK GAMBAR UTAMA --}}
@@ -70,7 +85,7 @@
                         </div>
                     </div>
                     
-                    {{-- Sidebar Aksi --}}
+                    {{-- Sidebar Aksi (Tampil hanya untuk Admin/Organizer yang memiliki izin) --}}
                     <div class="md:col-span-1 border-t md:border-t-0 md:border-l border-gray-100 pt-6 md:pt-0 md:pl-8 space-y-4">
                         <h3 class="text-lg font-semibold text-gray-800 mb-3">Aksi Event</h3>
 
@@ -102,20 +117,6 @@
                         
                     </div>
                 </div>
-
-                {{-- Feedback / Success Message (Penting untuk Booking/Update) --}}
-                @if (session('success'))
-                    <div class="bg-green-100 border-t border-green-300 text-green-700 p-4 rounded-b-xl">
-                        <p class="font-medium">Pembaruan Berhasil:</p>
-                        <p>{{ session('success') }}</p>
-                    </div>
-                @endif
-                @if (session('error'))
-                    <div class="bg-red-100 border-t border-red-300 text-red-700 p-4 rounded-b-xl">
-                        <p class="font-medium">Error:</p>
-                        <p>{{ session('error') }}</p>
-                    </div>
-                @endif
                 
             </div>
         </div>
@@ -123,182 +124,176 @@
     {{-- END: DETAIL EVENT --}}
 
     {{-- START: FORM PEMBELIAN TIKET --}}
-    <div class="py-6 bg-gray-50"> 
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-                <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Pesan Tiket Event</h3>
-                
-                {{-- Form Pembelian Tiket --}}
-                <form id="booking-form" method="POST" action="{{ route('bookings.store', $event) }}">
-                    @csrf
+    
+    {{-- KONDISI DITAMBAHKAN DI SINI: HANYA TAMPIL JIKA USER ADALAH ATTENDEE --}}
+    @if(Auth::check() && Auth::user()->isAttendee())
+        <div class="py-6 bg-gray-50"> 
+            <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Pesan Tiket Event</h3>
                     
-                    @if($event->ticketTypes->isEmpty())
-                        <p class="text-red-500">Saat ini belum ada tipe tiket yang tersedia untuk event ini.</p>
-                    @else
+                    {{-- Form Pembelian Tiket --}}
+                    <form id="booking-form" method="POST" action="{{ route('bookings.store', $event) }}">
+                        @csrf
                         
-                        <div class="space-y-4 mb-4 p-4 border rounded-lg bg-gray-50">
-                            <h4 class="text-lg font-semibold text-gray-800">Daftar Tiket Yang Dibeli:</h4>
+                        @if($event->ticketTypes->isEmpty())
+                            <p class="text-red-500">Saat ini belum ada tipe tiket yang tersedia untuk event ini.</p>
+                        @else
                             
-                            {{-- Container Utama Holder Tiket --}}
-                            <div id="ticket-holders-container" class="space-y-3">
-                                {{-- Baris Tiket Default (Index 0) --}}
-                                <div class="flex space-x-2 holder-row items-center border-b pb-3" data-price="0">
+                            <div class="space-y-4 mb-4 p-4 border rounded-lg bg-gray-50">
+                                <h4 class="text-lg font-semibold text-gray-700">Daftar Tiket Yang Dibeli:</h4>
+                                
+                                {{-- Container Utama Holder Tiket --}}
+                                <div id="ticket-holders-container" class="space-y-3">
+                                    {{-- Baris Tiket Default (Index 0) --}}
+                                    <div class="flex space-x-2 holder-row items-center border-b pb-3" data-price="0">
+                                        <div class="w-1/3">
+                                            <label class="block text-xs font-medium text-gray-500">Jenis Tiket</label>
+                                            <select name="holders[0][type_id]" required class="ticket-type-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full">
+                                                <option value="" data-price="0">-- Pilih Jenis Tiket --</option>
+                                                @foreach($event->ticketTypes as $type)
+                                                    <option value="{{ $type->id }}" data-price="{{ $type->price }}" {{ $type->available_quantity <= 0 ? 'disabled' : '' }}>
+                                                        {{ $type->name }} (Rp{{ number_format($type->price, 0, ',', '.') }})
+                                                        @if($type->available_quantity <= 0) (HABIS) @endif
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="w-2/3">
+                                            <label class="block text-xs font-medium text-gray-500">Nama Pemegang Tiket</label>
+                                            <input type="text" name="holders[0][name]" placeholder="Nama Lengkap Pemegang Tiket" required class="flex-grow border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full"/>
+                                        </div>
+                                        <button type="button" class="text-red-500 hover:text-red-700 remove-holder hidden px-2 py-2 mt-4">Hapus</button>
+                                    </div>
+                                </div>
+
+                                {{-- Tombol Tambah Tiket --}}
+                                <button type="button" id="add-holder-btn" class="mt-4 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                                    + Tambah Tiket Baru
+                                </button>
+                            </div>
+                            
+                            {{-- DISPLAY TOTAL HARGA --}}
+                            <div class="mt-8 p-4 bg-indigo-100 rounded-lg border-l-4 border-indigo-600 shadow-md">
+                                <h4 class="text-lg font-semibold text-gray-700 mb-1">Total yang Harus Dibayar:</h4>
+                                <p class="text-4xl font-extrabold text-indigo-800">
+                                    Rp<span id="total-price-display">0</span>
+                                </p>
+                            </div>
+
+                            <div class="mt-8">
+                                <x-primary-button type="submit" id="submit-booking-btn" class="bg-blue-600 hover:bg-blue-700">
+                                    Beli Tiket Sekarang
+                                </x-primary-button>
+                            </div>
+                        @endif
+                    </form>
+                    
+                    {{-- JS untuk Menambah Holder Tiket dan Menghitung Harga (dibiarkan di sini untuk fungsionalitas) --}}
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            let globalHolderIndex = 1;
+                            const totalPriceDisplay = document.getElementById('total-price-display');
+                            const ticketHoldersContainer = document.getElementById('ticket-holders-container');
+                            
+                            // FIX: ticketOptionsHtml sekarang dibuat dengan benar
+                            const ticketOptionsHtml = `@foreach($event->ticketTypes as $type)
+                                <option value="{{ $type->id }}" data-price="{{ $type->price }}" {{ $type->available_quantity <= 0 ? 'disabled' : '' }}>
+                                    {{ $type->name }} (Rp{{ number_format($type->price, 0, ',', '.') }})
+                                    @if($type->available_quantity <= 0) (HABIS) @endif
+                                </option>
+                            @endforeach`;
+
+                            function formatRupiah(number) {
+                                return new Intl.NumberFormat('id-ID').format(number);
+                            }
+
+                            function updateTotalPrice() {
+                                let total = 0;
+                                document.querySelectorAll('.holder-row').forEach(row => {
+                                    const priceStr = row.dataset.price;
+                                    const price = parseFloat(priceStr);
+                                    
+                                    if (!isNaN(price) && price > 0) {
+                                        total += price;
+                                    }
+                                });
+                                totalPriceDisplay.textContent = formatRupiah(total);
+                                toggleRemoveButtons();
+                            }
+
+                            function handleTicketTypeChange(event) {
+                                const selectElement = event.target;
+                                const selectedOption = selectElement.options[selectElement.selectedIndex];
+                                const price = selectedOption.dataset.price || '0'; 
+                                
+                                const row = selectElement.closest('.holder-row');
+                                row.dataset.price = price; 
+                                
+                                updateTotalPrice();
+                            }
+
+                            function toggleRemoveButtons() {
+                                const holderRows = ticketHoldersContainer.querySelectorAll('.holder-row');
+                                holderRows.forEach(row => {
+                                    const removeButton = row.querySelector('.remove-holder');
+                                    if (removeButton) {
+                                        if (holderRows.length > 1) {
+                                            removeButton.classList.remove('hidden');
+                                        } else {
+                                            removeButton.classList.add('hidden');
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            document.getElementById('add-holder-btn').addEventListener('click', function() {
+                                const newRow = document.createElement('div');
+                                newRow.className = 'flex space-x-2 holder-row items-center border-b pb-3';
+                                newRow.dataset.price = '0'; 
+                                
+                                newRow.innerHTML = `
                                     <div class="w-1/3">
                                         <label class="block text-xs font-medium text-gray-500">Jenis Tiket</label>
-                                        <select name="holders[0][type_id]" required class="ticket-type-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full">
+                                        <select name="holders[${globalHolderIndex}][type_id]" required class="ticket-type-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full">
                                             <option value="" data-price="0">-- Pilih Jenis Tiket --</option>
-                                            @foreach($event->ticketTypes as $type)
-                                                <option value="{{ $type->id }}" data-price="{{ $type->price }}" {{ $type->available_quantity <= 0 ? 'disabled' : '' }}>
-                                                    {{ $type->name }} (Rp{{ number_format($type->price, 0, ',', '.') }})
-                                                    @if($type->available_quantity <= 0) (HABIS) @endif
-                                                </option>
-                                            @endforeach
+                                            ${ticketOptionsHtml}
                                         </select>
                                     </div>
                                     <div class="w-2/3">
                                         <label class="block text-xs font-medium text-gray-500">Nama Pemegang Tiket</label>
-                                        <input type="text" name="holders[0][name]" placeholder="Nama Lengkap Pemegang Tiket" required class="flex-grow border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full"/>
+                                        <input type="text" name="holders[${globalHolderIndex}][name]" placeholder="Nama Lengkap Pemegang Tiket" required class="flex-grow border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full"/>
                                     </div>
-                                    <button type="button" class="text-red-500 hover:text-red-700 remove-holder hidden px-2 py-2 mt-4">Hapus</button>
-                                </div>
-                            </div>
-
-                            {{-- Tombol Tambah Tiket --}}
-                            <button type="button" id="add-holder-btn" class="mt-4 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-                                + Tambah Tiket Baru
-                            </button>
-                        </div>
-                        
-                        {{-- DISPLAY TOTAL HARGA --}}
-                        <div class="mt-8 p-4 bg-indigo-100 rounded-lg border-l-4 border-indigo-600 shadow-md">
-                            <h4 class="text-lg font-semibold text-gray-700 mb-1">Total yang Harus Dibayar:</h4>
-                            <p class="text-4xl font-extrabold text-indigo-800">
-                                Rp<span id="total-price-display">0</span>
-                            </p>
-                        </div>
-
-                        <div class="mt-8">
-                            <x-primary-button type="submit" id="submit-booking-btn" class="bg-blue-600 hover:bg-blue-700">
-                                Beli Tiket Sekarang
-                            </x-primary-button>
-                        </div>
-                    @endif
-                </form>
-                
-                {{-- JS untuk Menambah Holder Tiket dan Menghitung Harga --}}
-                <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                        let globalHolderIndex = 1;
-                        const totalPriceDisplay = document.getElementById('total-price-display');
-                        const ticketHoldersContainer = document.getElementById('ticket-holders-container');
-                        
-                        // FIX: Pastikan variabel ticketOptionsHtml mengambil data name dan harga dengan benar dari Blade.
-                        const ticketOptionsHtml = `@foreach($event->ticketTypes as $type)
-                            <option value="{{ $type->id }}" data-price="{{ $type->price }}" {{ $type->available_quantity <= 0 ? 'disabled' : '' }}>
-                                {{ $type->name }} (Rp{{ number_format($type->price, 0, ',', '.') }})
-                                @if($type->available_quantity <= 0) (HABIS) @endif
-                            </option>
-                        @endforeach`;
-
-                        // Fungsi utilitas untuk memformat angka ke Rupiah
-                        function formatRupiah(number) {
-                            return new Intl.NumberFormat('id-ID').format(number);
-                        }
-
-                        // Fungsi utama untuk menghitung dan memperbarui total harga
-                        function updateTotalPrice() {
-                            let total = 0;
-                            document.querySelectorAll('.holder-row').forEach(row => {
-                                const priceStr = row.dataset.price;
-                                const price = parseFloat(priceStr);
+                                    <button type="button" class="text-red-500 hover:text-red-700 remove-holder px-2 py-2 mt-4">Hapus</button>
+                                `;
                                 
-                                if (!isNaN(price) && price > 0) {
-                                    total += price;
-                                }
+                                newRow.querySelector('.remove-holder').addEventListener('click', function() {
+                                    newRow.remove();
+                                    updateTotalPrice(); 
+                                });
+
+                                newRow.querySelector('.ticket-type-select').addEventListener('change', handleTicketTypeChange);
+
+                                ticketHoldersContainer.appendChild(newRow);
+                                globalHolderIndex++;
+                                updateTotalPrice();
                             });
-                            totalPriceDisplay.textContent = formatRupiah(total);
-                            toggleRemoveButtons();
-                        }
-
-                        // Fungsi yang dipanggil saat jenis tiket dipilih
-                        function handleTicketTypeChange(event) {
-                            const selectElement = event.target;
-                            const selectedOption = selectElement.options[selectElement.selectedIndex];
-                            const price = selectedOption.dataset.price || '0'; 
                             
-                            const row = selectElement.closest('.holder-row');
-                            row.dataset.price = price; 
-                            
-                            updateTotalPrice();
-                        }
-
-                        // Fungsi untuk menyembunyikan/menampilkan tombol hapus
-                        function toggleRemoveButtons() {
-                            const holderRows = ticketHoldersContainer.querySelectorAll('.holder-row');
-                            holderRows.forEach(row => {
-                                const removeButton = row.querySelector('.remove-holder');
-                                if (removeButton) {
-                                    if (holderRows.length > 1) {
-                                        removeButton.classList.remove('hidden');
-                                    } else {
-                                        removeButton.classList.add('hidden');
-                                    }
-                                }
+                            // Pasang listener pada baris pertama yang sudah ada di HTML
+                            document.querySelector('.holder-row .remove-holder').addEventListener('click', function() {
+                                this.closest('.holder-row').remove();
+                                updateTotalPrice();
                             });
-                        }
-                        
-                        // Event Listener untuk Tombol Tambah Tiket
-                        document.getElementById('add-holder-btn').addEventListener('click', function() {
-                            const newRow = document.createElement('div');
-                            newRow.className = 'flex space-x-2 holder-row items-center border-b pb-3';
-                            newRow.dataset.price = '0'; 
-                            
-                            // Gunakan globalHolderIndex untuk nama input yang unik
-                            newRow.innerHTML = `
-                                <div class="w-1/3">
-                                    <label class="block text-xs font-medium text-gray-500">Jenis Tiket</label>
-                                    <select name="holders[${globalHolderIndex}][type_id]" required class="ticket-type-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full">
-                                        <option value="" data-price="0">-- Pilih Jenis Tiket --</option>
-                                        ${ticketOptionsHtml}
-                                    </select>
-                                </div>
-                                <div class="w-2/3">
-                                    <label class="block text-xs font-medium text-gray-500">Nama Pemegang Tiket</label>
-                                    <input type="text" name="holders[${globalHolderIndex}][name]" placeholder="Nama Lengkap Pemegang Tiket" required class="flex-grow border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full"/>
-                                </div>
-                                <button type="button" class="text-red-500 hover:text-red-700 remove-holder px-2 py-2 mt-4">Hapus</button>
-                            `;
-                            
-                            // 1. Pasang listener Hapus
-                            newRow.querySelector('.remove-holder').addEventListener('click', function() {
-                                newRow.remove();
-                                updateTotalPrice(); 
-                            });
+                            document.querySelector('.holder-row .ticket-type-select').addEventListener('change', handleTicketTypeChange);
 
-                            // 2. Pasang listener Perubahan Jenis Tiket
-                            newRow.querySelector('.ticket-type-select').addEventListener('change', handleTicketTypeChange);
-
-                            ticketHoldersContainer.appendChild(newRow);
-                            globalHolderIndex++;
                             updateTotalPrice();
                         });
-                        
-                        // INI PENTING: Pasang listener pada baris pertama yang sudah ada di HTML
-                        document.querySelector('.holder-row .remove-holder').addEventListener('click', function() {
-                            this.closest('.holder-row').remove();
-                            updateTotalPrice();
-                        });
-                        document.querySelector('.holder-row .ticket-type-select').addEventListener('change', handleTicketTypeChange);
-
-                        // Panggil perhitungan harga awal saat dimuat
-                        updateTotalPrice();
-                    });
-                </script>
+                    </script>
+                </div>
             </div>
         </div>
-    </div>
+    {{-- ENDIF: Form pembelian hanya untuk Attendee --}}
+    @endif 
     {{-- END: FORM PEMBELIAN TIKET --}}
-</x-app-layout>
-```
-
-
+    
+</x-admin-app-layout>

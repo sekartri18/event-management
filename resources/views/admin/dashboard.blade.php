@@ -1,11 +1,13 @@
-<x-app-layout>
+<x-admin-app-layout>
+    
+    {{-- SLOT HEADER: Judul Halaman di Bagian Atas Layout --}}
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Admin Dashboard (Akses Penuh Sistem)') }}
         </h2>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             {{-- ALERT MODE ADMIN --}}
@@ -17,16 +19,16 @@
             {{-- =============================================== --}}
             {{-- KARTU STATISTIK UTAMA (Dynamic Data) --}}
             {{-- =============================================== --}}
-            <div class="grid grid-cols-1 gap-6 md:grid-cols-3 mb-8">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-3 mb-10">
                 
-                {{-- Kartu 1: Total Pengguna (DIPERBAIKI) --}}
+                {{-- Kartu 1: Total Pengguna --}}
                 <div class="bg-white p-6 rounded-lg shadow-xl hover:shadow-2xl transition duration-300 border-b-4 border-indigo-600">
                     <div class="flex justify-between items-center">
                         <h4 class="text-base font-semibold text-gray-500 uppercase tracking-wider">Total Pengguna</h4>
                         <span class="text-3xl text-indigo-500">👥</span>
                     </div>
                     <p class="text-5xl text-gray-900 font-extrabold mt-2">
-                        {{ number_format($totalUsers) }}
+                        {{ number_format($totalUsers ?? 0) }}
                     </p>
                     <a href="{{ route('admin.users.index') }}" class="text-sm text-indigo-600 hover:text-indigo-800 mt-3 block font-medium">
                         Kelola Pengguna &rarr;
@@ -40,7 +42,7 @@
                         <span class="text-3xl text-green-500">📅</span>
                     </div>
                     <p class="text-5xl text-gray-900 font-extrabold mt-2">
-                        {{ number_format($totalEvents) }}
+                        {{ number_format($totalEvents ?? 0) }}
                     </p>
                     <a href="{{ route('events.index') }}" class="text-sm text-green-600 hover:text-green-800 mt-3 block font-medium">
                         Lihat Semua Event &rarr;
@@ -54,7 +56,7 @@
                         <span class="text-3xl text-purple-500">⭐</span>
                     </div>
                     <p class="text-5xl text-gray-900 font-extrabold mt-2">
-                        {{ number_format($totalReviews) }}
+                        {{ number_format($totalReviews ?? 0) }}
                     </p>
                     <a href="#" class="text-sm text-purple-600 hover:text-purple-800 mt-3 block font-medium">
                         Moderasi Ulasan &rarr;
@@ -63,26 +65,40 @@
                 
             </div>
             
-            {{-- BAGIAN AKTIVITAS TERKINI (Contoh penambahan konten) --}}
-            <div class="mt-8 bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            {{-- =============================================== --}}
+            {{-- BAGIAN AKTIVITAS TERKINI (SUDAH DIPERBAIKI) --}}
+            {{-- =============================================== --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <h3 class="font-bold text-xl mb-3 border-b pb-2 text-gray-800">Aktivitas Sistem Terbaru</h3>
-                    <p class="text-sm text-gray-600">Ini adalah tempat untuk menampilkan log atau daftar aktivitas terbaru (misalnya, 5 Event baru, 5 Pengguna baru, dll.)</p>
+                    <p class="text-sm text-gray-600">
+                        Ini adalah tempat untuk menampilkan log atau daftar aktivitas terbaru (misalnya, 5 Event baru, 5 Pengguna baru, dll.).
+                    </p>
                     
                     <ul class="mt-4 space-y-3 text-sm">
-                        <li class="p-3 bg-gray-50 rounded border-l-2 border-green-400">
-                            **{{ Auth::user()->name }}** berhasil masuk ke **Admin Panel** pada {{ now()->isoFormat('D MMMM YYYY, HH:mm') }}.
+                        
+                        {{-- 1. Contoh Aktivitas Login Admin (Warna Hijau) --}}
+                        <li class="p-3 bg-white border border-gray-200 rounded-lg shadow-sm border-l-4 border-green-500 hover:shadow-md transition duration-150">
+                            <span class="text-green-700 font-semibold mr-2">LOGIN:</span>
+                            <span class="font-bold text-gray-800">{{ Auth::user()->name }}</span> berhasil masuk ke Admin Panel pada <span class="text-gray-600">{{ now()->isoFormat('D MMMM YYYY, HH:mm') }}</span>.
                         </li>
-                        <li class="p-3 bg-gray-50 rounded border-l-2 border-indigo-400">
-                            Organizer baru terdaftar: **[Nama Organizer]**.
+                        
+                        {{-- 2. Contoh Aktivitas Pendaftaran Pengguna Baru (Warna Indigo) --}}
+                        <li class="p-3 bg-white border border-gray-200 rounded-lg shadow-sm border-l-4 border-indigo-500 hover:shadow-md transition duration-150">
+                            <span class="text-indigo-700 font-semibold mr-2">NEW USER:</span>
+                            Organizer baru terdaftar: <span class="font-bold text-gray-800">[Nama Organizer]</span>.
                         </li>
-                        <li class="p-3 bg-gray-50 rounded border-l-2 border-blue-400">
-                            Event **'{{ $totalEvents > 0 ? 'Tech Conference' : 'Event Baru' }}'** telah dibuat.
+                        
+                        {{-- 3. Contoh Aktivitas Event Baru Dibuat (Warna Biru) --}}
+                        <li class="p-3 bg-white border border-gray-200 rounded-lg shadow-sm border-l-4 border-blue-500 hover:shadow-md transition duration-150">
+                            <span class="text-blue-700 font-semibold mr-2">NEW EVENT:</span>
+                            Event <span class="font-bold text-gray-800">'{{ $totalEvents > 0 ? 'Tech Conference' : 'Event Baru' }}'</span> telah dibuat.
                         </li>
+                        
                     </ul>
                 </div>
             </div>
 
         </div>
     </div>
-</x-app-layout>
+</x-admin-app-layout>
