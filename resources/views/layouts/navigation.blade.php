@@ -8,6 +8,7 @@
                     </a>
                 </div>
 
+                {{-- NAVIGASI DESKTOP --}}
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     @auth
                         @php
@@ -49,6 +50,12 @@
                             <x-nav-link :href="route('events.index')" :active="request()->routeIs('events.index')" class="text-gray-700 hover:text-indigo-600 hover:border-indigo-400 focus:border-indigo-700">
                                 {{ __('Cari Event') }}
                             </x-nav-link>
+                            
+                            {{-- BARU: LINK TIKET SAYA UNTUK ATTENDEE --}}
+                            <x-nav-link :href="route('bookings.index')" :active="request()->routeIs('bookings.index')" class="text-gray-700 hover:text-indigo-700 hover:border-indigo-400 focus:border-indigo-700 font-semibold">
+                                {{ __('Tiket Saya') }}
+                            </x-nav-link>
+                            
                         @endif
                     @else
                         {{-- Tampilan Default untuk Guest (Belum Login) --}}
@@ -83,8 +90,8 @@
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault(); this.closest('form').submit();"
-                                    class="text-red-600 hover:bg-red-50">
+                                        onclick="event.preventDefault(); this.closest('form').submit();"
+                                        class="text-red-600 hover:bg-red-50">
                                 {{ __('Log Out') }}
                             </x-dropdown-link>
                         </form>
@@ -103,6 +110,7 @@
         </div>
     </div>
 
+    {{-- NAVIGASI RESPONSIVE (MOBILE) --}}
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             @auth
@@ -144,6 +152,12 @@
                     <x-responsive-nav-link :href="route('events.index')" :active="request()->routeIs('events.index')">
                         {{ __('Cari Event') }}
                     </x-responsive-nav-link>
+                    
+                    {{-- BARU: LINK TIKET SAYA UNTUK ATTENDEE (MOBILE) --}}
+                    <x-responsive-nav-link :href="route('bookings.index')" :active="request()->routeIs('bookings.index')" class="text-indigo-600 font-semibold">
+                        {{ __('Tiket Saya') }}
+                    </x-responsive-nav-link>
+                    
                 @endif
 
             @else
@@ -168,8 +182,8 @@
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault(); this.closest('form').submit();"
-                            class="text-red-600 hover:bg-red-50">
+                                onclick="event.preventDefault(); this.closest('form').submit();"
+                                class="text-red-600 hover:bg-red-50">
                         {{ __('Log Out') }}
                     </x-responsive-nav-link>
                 </form>
