@@ -16,13 +16,19 @@
                 {{ __($headerText) }}
             </h2>
             
-            {{-- TOMBOL INI SELALU ADA DI HEADER --}}
-            @can('create_event')
+            {{-- ========================================================== --}}
+            {{-- !! PERBAIKAN DI SINI: Menggunakan Policy Model !! --}}
+            {{-- ========================================================== --}}
+            {{-- Diubah dari @can('create_event') menjadi @can('create', App\Models\Event::class) --}}
+            @can('create', App\Models\Event::class)
                 <a href="{{ route('events.create') }}" 
                    class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-semibold text-sm transition shadow-md">
                     + Buat Event Baru
                 </a>
             @endcan
+            {{-- ========================================================== --}}
+            {{-- !! AKHIR PERBAIKAN !! --}}
+            {{-- ========================================================== --}}
         </div>
     </x-slot>
 

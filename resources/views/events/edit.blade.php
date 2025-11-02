@@ -9,7 +9,7 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 
-                {{-- PENTING: Tambahkan enctype="multipart/form-data" --}}
+                {{-- PENTING: enctype="multipart/form-data" sudah ada dan sudah benar --}}
                 <form method="POST" action="{{ route('events.update', $event) }}" enctype="multipart/form-data">
                     @csrf
                     @method('PATCH') 
@@ -41,7 +41,6 @@
                         <label for="tanggal_mulai" class="block text-sm font-medium text-gray-700">
                             Tanggal Mulai
                         </label>
-                        {{-- Menggunakan format YYYY-MM-DDTHH:MM untuk input datetime-local --}}
                         <x-text-input type="datetime-local" name="tanggal_mulai" id="tanggal_mulai" 
                                value="{{ old('tanggal_mulai', \Carbon\Carbon::parse($event->tanggal_mulai)->format('Y-m-d\TH:i')) }}" 
                                class="mt-1 block w-full" required />
@@ -69,11 +68,14 @@
                         <x-input-error :messages="$errors->get('deskripsi')" class="mt-2" />
                     </div>
 
-                    {{-- 6. UPLOAD GAMBAR BARU (PENTING) --}}
+                    {{-- ====================================================== --}}
+                    {{-- 6. UPLOAD GAMBAR BARU (BAGIAN YANG DIPERBAIKI) --}}
+                    {{-- ====================================================== --}}
                     <div class="mb-6">
-                        <x-input-label for="gambar" :value="__('Ganti Gambar Event (Opsional)')" />
+                        {{-- Diubah dari 'for="gambar"' menjadi 'for="image"' --}}
+                        <x-input-label for="image" :value="__('Ganti Gambar Event (Opsional)')" />
                         
-                        {{-- Tampilkan gambar lama --}}
+                        {{-- Tampilkan gambar lama (kolom Anda di DB sepertinya 'gambar', jadi ini tetap) --}}
                         @if ($event->gambar)
                             <div class="mt-2 mb-3">
                                 <p class="text-xs text-gray-500 mb-1">Gambar saat ini:</p>
@@ -85,9 +87,16 @@
                         @endif
 
                         {{-- Input file untuk upload baru --}}
-                        <x-text-input id="gambar" class="block mt-1 w-full p-2 border" type="file" name="gambar" accept="image/*" />
-                        <x-input-error :messages="$errors->get('gambar')" class="mt-2" />
+                        {{-- Diubah dari 'id="gambar"' dan 'name="gambar"' menjadi 'id="image"' dan 'name="image"' --}}
+                        <x-text-input id="image" class="block mt-1 w-full p-2 border" type="file" name="image" accept="image/*" />
+                        
+                        {{-- Diubah dari 'get('gambar')' menjadi 'get('image')' --}}
+                        <x-input-error :messages="$errors->get('image')" class="mt-2" />
                     </div>
+                    {{-- ====================================================== --}}
+                    {{-- AKHIR BAGIAN YANG DIPERBAIKI --}}
+                    {{-- ====================================================== --}}
+
 
                     {{-- 7. STATUS --}}
                     <div class="mb-6">
@@ -105,7 +114,7 @@
 
                     <div class="flex items-center space-x-3">
                          <button type="submit" 
-                                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-semibold text-sm transition shadow-md">
+                                 class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-semibold text-sm transition shadow-md">
                             Simpan Perubahan
                         </button>
                         <a href="{{ route('events.show', $event) }}" 

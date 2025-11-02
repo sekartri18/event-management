@@ -24,6 +24,21 @@ class EventPolicy
         return null; // Lanjutkan ke method Policy yang spesifik
     }
 
+    // ==========================================================
+    // !! KODE BARU DITAMBAHKAN DI SINI !!
+    // ==========================================================
+    /**
+     * Tentukan apakah user bisa membuat event baru.
+     */
+    public function create(User $user): bool
+    {
+        // Hanya user yang memiliki permission 'create_event' yang bisa (Organizer/Admin)
+        return $user->hasPermission('create_event');
+    }
+    // ==========================================================
+    // !! AKHIR KODE BARU !!
+    // ==========================================================
+
     // Policy view: Tidak perlu diubah, karena Admin sudah di-bypass di before()
     public function view(User $user, Event $event): bool
     {
