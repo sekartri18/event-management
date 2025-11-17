@@ -8,14 +8,12 @@ use App\Models\Ticket;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Spatie\CalendarLinks\Link; // <-- Ini sudah benar
 
 class EventController extends Controller
 {
     /**
-     * Tampilkan daftar event, dengan dukungan pencarian dan filter.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\View\View
+     * Tampilkan daftar event... (Method index Anda sudah benar)
      */
     public function index(Request $request)
     {
@@ -63,20 +61,23 @@ class EventController extends Controller
         return view('events.index', compact('events'));
     }
 
-    // Form untuk buat event (hanya organizer)
+    /**
+     * Form untuk buat event... (Method create Anda sudah benar)
+     */
     public function create()
     {
         Gate::authorize('create', Event::class);
         return view('events.create');
     }
 
-    // Simpan event baru ke database
+    /**
+     * Simpan event baru... (Method store Anda sudah benar)
+     */
     public function store(Request $request)
     {
         Gate::authorize('create', Event::class);
 
         // 1. Validasi Input
-        // !! PERBAIKAN: Mengubah 'gambar' menjadi 'image' agar sesuai form !!
         $validated = $request->validate([
             'nama_event' => 'required|string|max:255',
             'tanggal_mulai' => 'required|date',
@@ -84,15 +85,13 @@ class EventController extends Controller
             'lokasi' => 'required|string|max:255',
             'status' => 'required|in:upcoming,ongoing,finished',
             'deskripsi' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Diubah dari 'gambar'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
         ]);
 
         $imagePath = null;
 
         // 2. Handle File Upload Gambar
-        // !! PERBAIKAN: Mengecek 'image' dari request !!
         if ($request->hasFile('image')) {
-            // !! PERBAIKAN: Mengambil file 'image' !!
             $imagePath = $request->file('image')->store('events', 'public');
         }
 
@@ -106,20 +105,87 @@ class EventController extends Controller
             'lokasi' => $validated['lokasi'],
             'status' => $validated['status'],
             'deskripsi' => $validated['deskripsi'],
-            'gambar' => $imagePath, // Kolom DB tetap 'gambar', tapi isinya dari file 'image'
+            'gambar' => $imagePath, 
         ]);
 
         return redirect()->route('events.index')->with('success', 'Event berhasil dibuat!');
     }
 
-    // Tampilkan detail event
+    /**
+     * Tampilkan detail event
+     *
+     * INI ADALAH METHOD YANG DIPERBAIKI
+     */
     public function show(Event $event)
     {
-        $event->load('ticketTypes', 'organizer');
-        return view('events.show', compact('event'));
+        // 1. Eager load relasi yang dibutuhkan
+        //    PERBAIKAN: Tambahkan 'reviews.attendee'
+        $event->load('ticketTypes', 'organizer', 'reviews.attendee');
+
+        // 2. Buat Link Kalender (Kode Anda sudah benar)
+        $link = Link::create(
+            $event->nama_event,
+            $event->tanggal_mulai, // Ini akan menjadi objek Carbon karena $casts
+            $event->tanggal_selesai
+        )->description($event->deskripsi)
+         ->address($event->lokasi);
+
+        $calendarLinks = [
+            'google' => $link->google(),
+            'ics' => $link->ics(), // Untuk Outlook, Apple Calendar, dll.
+        ];
+
+        // 3. TAMBAHAN: Hitung rata-rata rating
+        //    PERBAIKAN: Cek count() > 0 untuk menghindari Division by Zero
+        $averageRating = $event->reviews->count() > 0 ? $event->reviews->avg('rating') : 0;
+
+        // 4. TAMBAHAN: Tentukan apakah user saat ini bisa memberi review
+        $user = Auth::user();
+        $canReview = false; 
+        $reviewError = null; // Variabel untuk menyimpan pesan error
+
+        if ($user && $user->isAttendee()) {
+            // Cek apakah dia punya tiket lunas (sesuai Model User & Booking)
+            $hasPaidBooking = $user->bookings()
+                                     ->where('event_id', $event->id)
+                                     ->where('status_pembayaran', 'paid')
+                                     ->exists();
+            
+            // Cek apakah dia sudah pernah review (sesuai Model User & Review)
+            // PERBAIKAN: Gunakan 'attendee_id'
+            $hasAlreadyReviewed = $event->reviews->where('attendee_id', $user->id)->isNotEmpty();
+
+            if ($event->status == 'finished') {
+                if ($hasPaidBooking && !$hasAlreadyReviewed) {
+                    $canReview = true;
+                } elseif ($hasAlreadyReviewed) {
+                    $reviewError = 'Anda sudah memberikan review untuk event ini.';
+                } elseif (!$hasPaidBooking) {
+                    $reviewError = 'Hanya peserta yang sudah membayar yang bisa memberi review.';
+                }
+            } else {
+                 $reviewError = 'Anda baru bisa memberi review setelah event selesai.';
+            }
+        }
+
+        // 5. TAMBAHAN: Kirim pesan error (jika ada) ke session agar bisa ditampilkan di view
+        if ($reviewError) {
+            session()->flash('review_error', $reviewError);
+        }
+
+        // 6. PERBAIKAN: Kirim semua data ke view
+        return view('events.show', compact(
+            'event', 
+            'calendarLinks', 
+            'averageRating', 
+            'canReview'
+        ));
     }
 
-    // Form untuk edit event
+
+    /**
+     * Form untuk edit event... (Method edit Anda sudah benar)
+     */
     public function edit(Event $event)
     {
         Gate::authorize('update', $event);
@@ -127,13 +193,13 @@ class EventController extends Controller
         return view('events.edit', compact('event'));
     }
 
-    // Update event
+    /**
+     * Update event... (Method update Anda sudah benar)
+     */
     public function update(Request $request, Event $event)
     {
         Gate::authorize('update', $event);
 
-        // 1. Validasi Input
-        // !! PERBAIKAN: Mengubah 'gambar' menjadi 'image' agar sesuai form !!
         $validated = $request->validate([
             'nama_event' => 'required|string|max:255',
             'tanggal_mulai' => 'required|date',
@@ -141,41 +207,33 @@ class EventController extends Controller
             'lokasi' => 'required|string|max:255',
             'status' => 'required|in:upcoming,ongoing,finished',
             'deskripsi' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Diubah dari 'gambar'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
         ]);
 
-        // Hapus 'image' dari $validated karena kita akan menanganinya secara manual
-        // dan kita tidak ingin mencoba mengupdate kolom 'image' (yang tidak ada)
         $dataToUpdate = $request->except(['image', '_token', '_method']);
 
-
-        // 2. Handle File Upload Gambar (Jika ada file baru)
-        // !! PERBAIKAN: Mengecek 'image' dari request !!
         if ($request->hasFile('image')) {
             
-            // Hapus gambar lama jika ada (dari kolom 'gambar')
             if ($event->gambar) {
                 Storage::disk('public')->delete($event->gambar);
             }
             
-            // !! PERBAIKAN: Simpan file 'image' dan set path-nya ke kolom 'gambar' !!
             $dataToUpdate['gambar'] = $request->file('image')->store('events', 'public');
         
-        } // Jika tidak ada file baru, 'gambar' lama akan tetap dipertahankan
+        } 
 
-        // 3. Update Event
         $event->update($dataToUpdate);
 
-        // Redirect kembali ke halaman index atau show
         return redirect()->route('events.index')->with('success', 'Event berhasil diperbarui!');
     }
 
-    // Hapus event
+    /**
+     * Hapus event... (Method destroy Anda sudah benar)
+     */
     public function destroy(Event $event)
     {
         Gate::authorize('delete', $event);
 
-        // Hapus file gambar dari storage sebelum menghapus record (kolom 'gambar')
         if ($event->gambar) {
             Storage::disk('public')->delete($event->gambar);
         }
@@ -184,9 +242,9 @@ class EventController extends Controller
         return redirect()->route('events.index')->with('success', 'Event berhasil dihapus!');
     }
 
-    // ========================================================
-    // == METHOD BARU UNTUK ATTENDEE MANAGEMENT ==
-    // ========================================================
+    /**
+     * Method showAttendees... (Method showAttendees Anda sudah benar)
+     */
     public function showAttendees(Event $event)
     {
         Gate::authorize('update', $event); 
@@ -202,12 +260,8 @@ class EventController extends Controller
         return view('events.attendees', compact('event', 'tickets'));
     }
 
-    // ========================================================
-    // == METHOD BARU UNTUK CHECK-IN SCANNER ==
-    // ========================================================
-
     /**
-     * Menampilkan halaman scanner QR Code.
+     * Menampilkan halaman scanner... (Method showCheckInScanner Anda sudah benar)
      */
     public function showCheckInScanner(Event $event)
     {
@@ -216,7 +270,7 @@ class EventController extends Controller
     }
 
     /**
-     * Memproses data QR Code yang di-scan (via AJAX/Fetch).
+     * Memproses data QR Code... (Method processCheckIn Anda sudah benar)
      */
     public function processCheckIn(Request $request)
     {
@@ -231,12 +285,10 @@ class EventController extends Controller
         $event = Event::findOrFail($eventId);
         Gate::authorize('update', $event);
 
-        // 1. Cari tiket berdasarkan QR Code
         $ticket = Ticket::with('booking', 'ticketType')
                             ->where('qr_code', $qrCode)
                             ->first();
 
-        // 2. Jika Tiket TIDAK DITEMUKAN
         if (!$ticket) {
             return response()->json([
                 'status' => 'error',
@@ -244,7 +296,6 @@ class EventController extends Controller
             ], 404); // Not Found
         }
 
-        // 3. Cek apakah tiket ini milik event yang benar
         if ($ticket->booking->event_id != $eventId) {
             return response()->json([
                 'status' => 'error',
@@ -252,7 +303,6 @@ class EventController extends Controller
             ], 400); // Bad Request
         }
 
-        // 4. Cek apakah tiket sudah di-check-in
         if ($ticket->statusCheckIn == 'checked-in') {
             return response()->json([
                 'status' => 'warning',
@@ -261,7 +311,6 @@ class EventController extends Controller
             ], 409); // Conflict
         }
 
-        // 5. Cek apakah pembayaran tiket lunas
         if ($ticket->booking->status_pembayaran != 'paid') {
              return response()->json([
                 'status' => 'error',
@@ -269,7 +318,6 @@ class EventController extends Controller
             ], 402); // Payment Required
         }
 
-        // 6. SUKSES: Update status tiket
         $ticket->statusCheckIn = 'checked-in';
         $ticket->tanggalCheckIn = now();
         $ticket->save();

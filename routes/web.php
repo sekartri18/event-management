@@ -6,7 +6,8 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController; 
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\TicketTypeController; 
-use App\Http\Controllers\CheckInController; // <--- BARU: IMPORT CONTROLLER CHECK-IN
+use App\Http\Controllers\CheckInController; // Controller Check-in Anda
+use App\Http\Controllers\ReviewController; // <-- DITAMBAHKAN: Import Controller Review
 use Illuminate\Support\Facades\Route;
 
 // Rute Halaman Utama (Welcome Page)
@@ -32,52 +33,53 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy'); 
     
     // -------------------------------------------------------------
-    // RUTE EVENT (CRUD Lengkap)
+    // RUTE EVENT (CRUD Lengkap - Telah Dirapikan)
     // -------------------------------------------------------------
     
-    /* * Menggunakan Route::resource untuk mendaftarkan semua rute CRUD:
-     * - index, show, create, store, edit, update, destroy.
-     * Kita menerapkan middleware permission ke masing-masing aksi di bawah ini.
-     */
-    Route::resource('events', EventController::class)->middleware([
-        // Memastikan hanya user dengan role/permission yang tepat yang bisa mengakses action
-        'permission:view_event' // Default permission untuk semua aksi yang tidak di-override
-    ]);
-
-    // Override untuk aksi-aksi spesifik yang membutuhkan permission berbeda
+    // Read (List)
     Route::get('/events', [EventController::class, 'index'])
         ->name('events.index')
-        ->middleware('permission:view_event'); // Read/List
+        ->middleware('permission:view_event'); 
 
+    // Create (Form)
     Route::get('/events/create', [EventController::class, 'create'])
         ->name('events.create')
-        ->middleware('permission:create_event'); // Create form
+        ->middleware('permission:create_event'); 
 
+    // Create (Logic)
     Route::post('/events', [EventController::class, 'store'])
         ->name('events.store')
-        ->middleware('permission:create_event'); // Create logic
+        ->middleware('permission:create_event');
     
-    // Otorisasi Update event akan di handle oleh EventPolicy (owner + permission)
+    // Read (Single)
+    Route::get('/events/{event}', [EventController::class, 'show'])
+        ->name('events.show')
+        ->middleware('permission:view_event');
+
+    // Update (Form) - Otorisasi via Policy
     Route::get('/events/{event}/edit', [EventController::class, 'edit'])
         ->name('events.edit'); 
     
+    // Update (Logic) - Otorisasi via Policy
     Route::patch('/events/{event}', [EventController::class, 'update'])
         ->name('events.update');
         
+    // Delete (Logic)
     Route::delete('/events/{event}', [EventController::class, 'destroy'])
         ->name('events.destroy')
-        ->middleware('permission:delete_event'); // Delete logic
-        
-    // Catatan: show route tidak perlu di-override, akan menggunakan permission default 'view_event'
+        ->middleware('permission:delete_event');
     
     // =============================================================
-    // RUTE YANG DIPERBAIKI: PENGATURAN TIPE TIKET (NESTED RESOURCE)
+    // RUTE PENGATURAN TIPE TIKET (NESTED RESOURCE)
     // =============================================================
     Route::resource('events.tickets', TicketTypeController::class)
-           ->except(['show', 'create', 'edit'])
-           ->middleware('permission:edit_event'); 
+            ->except(['show', 'create', 'edit'])
+            ->middleware('permission:edit_event'); 
 
-    // Rute Booking 
+    // -------------------------------------------------------------
+    // RUTE BOOKING (Untuk Attendee)
+    // -------------------------------------------------------------
+    
     // Daftar riwayat booking attendee
     Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
     
@@ -94,7 +96,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/bookings/{booking}/confirmation', [BookingController::class, 'showConfirmation'])->name('bookings.confirmation');
 
     // =============================================================
-    // RUTE BARU: CHECK-IN EVENT & DAFTAR PESERTA (FOR ORGANIZER) <--- RUTE BARU DITAMBAHKAN DI SINI
+    // RUTE CHECK-IN EVENT (FOR ORGANIZER)
     // =============================================================
     Route::prefix('events/{event}')->name('events.checkin.')->group(function () {
         
@@ -113,6 +115,14 @@ Route::middleware('auth')->group(function () {
             ->name('process')
             ->middleware('permission:edit_event');
     });
+
+    // =============================================================
+    // RUTE REVIEWS EVENT (FOR ATTENDEE - DIPERBAIKI)
+    // =============================================================
+    Route::post('events/{event}/reviews', [ReviewController::class, 'store'])
+        ->name('events.reviews.store') // <-- Nama diubah agar konsisten
+        ->middleware('permission:review_event'); // <-- Middleware keamanan ditambahkan
+    // =============================================================
 
     // -------------------------------------------------------------
     // RUTE ADMIN AREA (DILINDUNGI OLEH PERMISSION ADMIN)

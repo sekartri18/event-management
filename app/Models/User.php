@@ -5,14 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\BelongsTo; // Tambahkan ini jika belum ada
-use App\Models\Role; // Tambahkan ini jika belum ada
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany; // <-- IMPORT DITAMBAHKAN
+use App\Models\Role;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+    /**
+     * Atribut yang dapat diisi secara massal.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'email',
@@ -22,23 +27,35 @@ class User extends Authenticatable
         'password',
     ];
 
+    /**
+     * Atribut yang harus disembunyikan saat serialisasi.
+     *
+     * @var array<int, string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    /**
+     * Mendapatkan cast atribut.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'tanggal_daftar' => 'date', // Pastikan tanggal_daftar dicast ke 'date' jika perlu
+            'tanggal_daftar' => 'date',
         ];
     }
 
     /** ===================== RELASI ROLE ===================== */
     
-    // Gunakan type hinting BelongsTo
+    /**
+     * Mendapatkan role yang dimiliki user.
+     */
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
@@ -46,19 +63,21 @@ class User extends Authenticatable
 
     /**
      * Memeriksa apakah pengguna memiliki permission tertentu.
-     * Admin selalu true. Role lain dicek melalui relasi.
      */
     public function hasPermission(string $permission): bool
     {
-        // Jika pengguna adalah Admin, langsung berikan akses (bypass check)
+        // Admin selalu memiliki semua permission
         if ($this->isAdmin()) {
             return true; 
         }
 
-        // Cek permission melalui Role (menggunakan method hasPermission di Model Role)
+        // Cek permission melalui Role
         return $this->role?->hasPermission($permission) ?? false;
     }
 
+    /**
+     * Mendapatkan nama role user.
+     */
     public function getRoleName(): string
     {
         return $this->role?->name ?? 'No Role';
@@ -66,7 +85,6 @@ class User extends Authenticatable
 
     /** ===================== HELPER UNTUK ROLE ===================== */
 
-    // Tambahkan Helper untuk Admin
     public function isAdmin(): bool
     {
         return $this->getRoleName() === 'admin';
@@ -82,22 +100,32 @@ class User extends Authenticatable
         return $this->getRoleName() === 'attendee';
     }
 
-    /** ===================== RELASI EVENT MANAGEMENT ===================== */
-    public function events()
+    /** ===================== RELASI EVENT MANAGEMENT (DIPERBAIKI) ===================== */
+    
+    /**
+     * Mendapatkan events yang dibuat oleh user (jika organizer).
+     */
+    public function events(): HasMany // <-- TYPE-HINT DITAMBAHKAN
     {
-        // hanya berlaku jika user ini Organizer
-        return $this->hasMany(Event::class, 'id_organizer');
+        // Menggunakan foreign key 'organizer_id'
+        return $this->hasMany(Event::class, 'organizer_id');
     }
 
-    public function bookings()
+    /**
+     * Mendapatkan bookings yang dibuat oleh user (jika attendee).
+     */
+    public function bookings(): HasMany // <-- TYPE-HINT DITAMBAHKAN
     {
-        // hanya berlaku jika user ini Attendee
-        return $this->hasMany(Booking::class, 'id_attendee');
+        // Menggunakan foreign key 'attendee_id'
+        return $this->hasMany(Booking::class, 'attendee_id');
     }
 
-    public function reviews()
+    /**
+     * Mendapatkan reviews yang ditulis oleh user (jika attendee).
+     */
+    public function reviews(): HasMany // <-- TYPE-HINT DITAMBAHKAN
     {
-        // hanya berlaku jika user ini Attendee
-        return $this->hasMany(Review::class, 'id_attendee');
+        // Menggunakan foreign key 'attendee_id'
+        return $this->hasMany(Review::class, 'attendee_id');
     }
 }
