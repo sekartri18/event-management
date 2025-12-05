@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>{{ config('app.name', 'Laravel') }} - Platform Manajemen Event Digital</title>
+        <title>{{ config('app.name', 'EventPro') }} - Platform Manajemen Event Digital</title>
 
         <!-- Fonts: Menggunakan Inter untuk tampilan modern -->
         <link rel="preconnect" href="https://fonts.bunny.net">

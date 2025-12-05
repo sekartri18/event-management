@@ -7,10 +7,9 @@
 <aside class="fixed top-0 left-0 h-full w-64 bg-white text-gray-800 shadow-xl z-30 transition-transform duration-300 transform -translate-x-full sm:translate-x-0">
     
     {{-- Logo / Judul Sidebar --}}
+ 
     <div class="flex items-center justify-center h-16 border-b border-gray-200 bg-gray-50">
-        <span class="text-2xl font-extrabold tracking-wider text-{{ $primaryColor }}-600">
-            Admin<span class="text-gray-900">Panel</span>
-        </span>
+        <img src="{{ asset('images/eventpro.jpg') }}" alt="EventPro Logo" class="h-10 w-auto" />
     </div>
 
     {{-- Navigasi Sidebar --}}
