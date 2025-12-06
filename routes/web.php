@@ -92,6 +92,8 @@ Route::middleware('auth')->group(function () {
     // 3. Konfirmasi/Tiket Jadi (Setelah Pembayaran Sukses)
     Route::get('/bookings/{booking}/confirmation', [BookingController::class, 'showConfirmation'])->name('bookings.confirmation');
 
+    Route::get('/bookings/{booking}', [BookingController::class, 'showTicketDetail'])->name('bookings.show');
+
     // =============================================================
     // RUTE CHECK-IN EVENT (FOR ORGANIZER)
     // =============================================================

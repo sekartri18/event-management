@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Role;
+use App\Models\Role; // Pastikan model Role di-import
 use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -50,15 +50,8 @@ class RegisteredUserController extends Controller
         ]);
 
         event(new Registered($user));
-        Auth::login($user);
+        
+        return redirect(route('login', absolute: false))->with('status', 'Pendaftaran berhasil! Silakan login dengan akun Anda.');
 
-        // LOGIKA REDIRECT BERDASARKAN ROLE YANG BARU SAJA DIPILIH
-        if ($request->role === 'organizer') {
-            // Arahkan Organizer ke halaman manajemen event (events.index)
-            return redirect()->intended(route('events.index'));
-        }
-
-        // Default: Arahkan Attendee ke dashboard umum
-        return redirect()->intended(route('dashboard'));
     }
 }
