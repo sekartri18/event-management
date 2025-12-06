@@ -89,10 +89,7 @@ Route::middleware('auth')->group(function () {
     // 2. Halaman Checkout/Pilih Pembayaran (GET)
     Route::get('/bookings/{booking}/checkout', [BookingController::class, 'showCheckout'])->name('bookings.checkout'); 
 
-    // 3. Proses Pembayaran (Simulasi mengubah status booking) (POST)
-    Route::post('/bookings/{booking}/pay', [BookingController::class, 'processPayment'])->name('bookings.pay'); 
-
-    // 4. Konfirmasi/Tiket Jadi (Setelah Pembayaran Sukses)
+    // 3. Konfirmasi/Tiket Jadi (Setelah Pembayaran Sukses)
     Route::get('/bookings/{booking}/confirmation', [BookingController::class, 'showConfirmation'])->name('bookings.confirmation');
 
     // =============================================================
@@ -136,6 +133,8 @@ Route::middleware('auth')->group(function () {
         // RUTE BARU: Manajemen Pengguna (Menggunakan UserController)
         // Kita hanya mengizinkan aksi index, edit, update, dan destroy.
         Route::resource('users', UserController::class)->only(['index', 'edit', 'update', 'destroy']);
+
+    Route::post('/midtrans/notification', [BookingController::class, 'notificationHandler'])->name('midtrans.notification');
         
     });
 
