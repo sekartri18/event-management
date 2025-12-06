@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }} - Event Management</title>
+        <title>{{ config('app.name', 'EventPro') }} - Event Management</title>
 
         <!-- Fonts: Menggunakan Inter untuk tampilan modern -->
         <link rel="preconnect" href="https://fonts.bunny.net">
