@@ -75,8 +75,11 @@ class EventController extends Controller
             }
         }
 
-        // 5. Kirim variabel ke view
-        return view('events.index', compact('events', 'totalDanaMasuk'));
+        // 5. Tentukan view berdasarkan role user
+        $viewName = ($user && $user->isAdmin()) ? 'events.index-admin' : 'events.index';
+
+        // 6. Kirim variabel ke view
+        return view($viewName, compact('events', 'totalDanaMasuk'));
     }
 
     /**
@@ -183,7 +186,10 @@ class EventController extends Controller
             session()->flash('review_error', $reviewError);
         }
 
-        return view('events.show', compact('event', 'calendarLinks', 'averageRating', 'canReview'));
+        // Pilih view berdasarkan role user
+        $viewName = ($user && $user->isAdmin()) ? 'events.show-admin' : 'events.show';
+
+        return view($viewName, compact('event', 'calendarLinks', 'averageRating', 'canReview'));
     }
 
     /**
@@ -193,7 +199,9 @@ class EventController extends Controller
     {
         Gate::authorize('update', $event);
         $event->load('ticketTypes');
-        return view('events.edit', compact('event'));
+        
+        $viewName = (auth()->user() && auth()->user()->isAdmin()) ? 'events.edit-admin' : 'events.edit';
+        return view($viewName, compact('event'));
     }
 
     /**

@@ -95,6 +95,9 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->name('admin.')->middleware('permission:manage_users')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
         Route::resource('users', UserController::class)->only(['index', 'edit', 'update', 'destroy']);
+
+        // RUTE ADMIN REVIEWS
+        Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
     });
 
 });

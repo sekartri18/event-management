@@ -22,17 +22,17 @@
             <!-- Main Content -->
             <main class="flex-1 sm:ml-64">
                 <!-- Header -->
-                @if (isset($header))
+                @hasSection('header')
                     <header class="bg-white shadow">
                         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                            {{ $header }}
+                            @yield('header')
                         </div>
                     </header>
                 @endif
 
                 <!-- Page Content -->
                 <div class="py-8 px-4 sm:px-6 lg:px-8">
-                    {{ $slot }}
+                    @yield('content')
                 </div>
             </main>
         </div>

@@ -11,11 +11,11 @@
                 </button>
                 
                 {{-- Judul Halaman di Desktop --}}
-                @isset($header)
+                @hasSection('header')
                     <div class="hidden sm:block">
-                        {{ $header }}
+                        @yield('header')
                     </div>
-                @endisset
+                @endhasSection
             </div>
 
             {{-- Kanan: Dropdown User Profile --}}

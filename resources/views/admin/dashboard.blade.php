@@ -25,18 +25,18 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {{-- KARTU 1: TOTAL DANA MASUK (GROSS) --}}
-                    <div class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-200">
+                    <div class="bg-white overflow-hidden shadow-lg rounded-xl border-l-8 border-blue-500">
                         <div class="p-6">
                             <div class="flex items-center">
                                 <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
                                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium text-gray-500 uppercase">Total Dana Masuk (Gross)</p>
-                                    <p class="text-3xl font-extrabold text-gray-900">
+                                    <p class="text-sm font-medium text-blue-600 uppercase">Total Dana Masuk (Gross)</p>
+                                    <p class="text-3xl font-extrabold text-blue-900">
                                         Rp{{ number_format($totalGrossRevenue ?? 0, 0, ',', '.') }}
                                     </p>
-                                    <p class="text-xs text-gray-400 mt-1">Total nilai transaksi tiket + fee</p>
+                                    <p class="text-xs text-blue-600 mt-1">Total nilai transaksi tiket + fee</p>
                                 </div>
                             </div>
                         </div>
@@ -106,7 +106,9 @@
                     <p class="text-4xl text-gray-900 font-bold mt-2">
                         {{ number_format($totalReviews ?? 0) }}
                     </p>
-                    <span class="text-sm text-gray-400 mt-3 block">Feedback dari user</span>
+                    <a href="{{ route('admin.reviews.index') }}" class="text-sm text-purple-600 hover:text-purple-800 mt-3 block font-medium">
+                        Kelola Ulasan &rarr;
+                    </a>
                 </div>
                 
             </div>

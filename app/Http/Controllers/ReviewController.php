@@ -10,6 +10,42 @@ use Illuminate\Support\Facades\Auth;
 class ReviewController extends Controller
 {
     /**
+     * Menampilkan semua reviews untuk admin (kelola ulasan).
+     */
+    public function index(Request $request)
+    {
+        // Cek apakah user adalah admin
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Get all reviews with relationships
+        $query = Review::with(['event', 'attendee'])
+                       ->orderBy('tanggal_review', 'desc');
+
+        // Filter berdasarkan event search jika ada parameter
+        if ($request->has('event_search') && $request->event_search) {
+            $eventSearch = $request->event_search;
+            $query->whereHas('event', function ($q) use ($eventSearch) {
+                $q->where('nama_event', 'like', '%' . $eventSearch . '%');
+            });
+        }
+
+        // Filter berdasarkan rating jika ada parameter
+        if ($request->has('rating') && $request->rating) {
+            $query->where('rating', $request->rating);
+        }
+
+        $reviews = $query->paginate(15);
+        $events = Event::where('status', 'finished')->orderBy('nama_event', 'asc')->get();
+
+        return view('admin.reviews.index', [
+            'reviews' => $reviews,
+            'events' => $events,
+        ]);
+    }
+
+    /**
      * Store a newly created review in storage.
      *
      * @param  \Illuminate\Http\Request  $request

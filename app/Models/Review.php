@@ -27,6 +27,15 @@ class Review extends Model
     ];
 
     /**
+     * Cast attributes to native types.
+     *
+     * @var array<string,string>
+     */
+    protected $casts = [
+        'tanggal_review' => 'datetime',
+    ];
+
+    /**
      * Mendapatkan user (attendee) yang menulis review.
      */
     public function attendee(): BelongsTo
