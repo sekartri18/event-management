@@ -1,47 +1,129 @@
-<x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
+    <title>Login - {{ config('app.name', 'EventPro') }}</title>
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="font-sans antialiased text-gray-900 bg-white">
+    
+    <div class="min-h-screen flex">
+        
+        {{-- BAGIAN KIRI: GAMBAR & BRANDING (Hanya tampil di Desktop) --}}
+        <div class="hidden lg:flex lg:w-1/2 relative bg-indigo-900 overflow-hidden">
+            {{-- Menggunakan gambar yang sudah ada di public/images/eventpro.jpg --}}
+            <img src="{{ asset('images/eventpro.jpg') }}" 
+                 alt="Event Background" 
+                 class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay">
+            
+            <div class="relative z-10 w-full flex flex-col justify-center px-12 text-white">
+                <div class="mb-6">
+                    {{-- Logo SVG Sederhana --}}
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <h1 class="text-5xl font-extrabold mb-4 leading-tight">Kelola Event <br>Tanpa Batas.</h1>
+                <p class="text-lg text-indigo-100 max-w-md">Platform manajemen event all-in-one untuk organizer profesional. Buat, jual tiket, dan atur check-in dalam satu tempat.</p>
+            </div>
+            
+            {{-- Hiasan Dekoratif --}}
+            <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+            <div class="absolute -top-24 -right-24 w-64 h-64 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+        {{-- BAGIAN KANAN: FORM LOGIN --}}
+        <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
+            <div class="w-full max-w-md">
+                
+                {{-- Header (Logo & Title) - DIPERBAIKI: Menghapus 'lg:text-left' agar selalu Rata Tengah --}}
+                <div class="text-center mb-10">
+                    <div class="flex justify-center mb-4">
+                        <x-application-logo class="w-12 h-12 fill-current text-indigo-600" />
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-900">Selamat Datang Kembali! 👋</h2>
+                    <p class="mt-2 text-sm text-gray-600">Masuk ke akun Anda untuk mulai mengelola event.</p>
+                </div>
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+                {{-- Session Status --}}
+                <x-auth-session-status class="mb-4" :status="session('status')" />
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                <form method="POST" action="{{ route('login') }}" class="space-y-6">
+                    @csrf
+
+                    {{-- Email Address --}}
+                    <div>
+                        <x-input-label for="email" :value="__('Email')" class="text-gray-700 font-semibold" />
+                        <div class="relative mt-1">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path></svg>
+                            </span>
+                            <x-text-input id="email" class="block mt-1 w-full pl-10 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm py-3" 
+                                          type="email" name="email" :value="old('email')" required autofocus autocomplete="username" 
+                                          placeholder="nama@email.com" />
+                        </div>
+                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                    </div>
+
+                    {{-- Password --}}
+                    <div>
+                        <div class="flex justify-between items-center">
+                            <x-input-label for="password" :value="__('Password')" class="text-gray-700 font-semibold" />
+                            @if (Route::has('password.request'))
+                                <a class="text-sm text-indigo-600 hover:text-indigo-800 font-medium" href="{{ route('password.request') }}">
+                                    {{ __('Lupa Password?') }}
+                                </a>
+                            @endif
+                        </div>
+                        <div class="relative mt-1">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            </span>
+                            <x-text-input id="password" class="block mt-1 w-full pl-10 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm py-3" 
+                                          type="password" name="password" required autocomplete="current-password" 
+                                          placeholder="••••••••" />
+                        </div>
+                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                    </div>
+
+                    {{-- Remember Me --}}
+                    <div class="block">
+                        <label for="remember_me" class="inline-flex items-center cursor-pointer">
+                            <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 h-4 w-4" name="remember">
+                            <span class="ml-2 text-sm text-gray-600">{{ __('Ingat Saya') }}</span>
+                        </label>
+                    </div>
+
+                    {{-- Submit Button --}}
+                    <div>
+                        <button type="submit" 
+                                class="w-full justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 transform hover:scale-[1.02]">
+                            {{ __('Masuk Sekarang') }}
+                        </button>
+                    </div>
+                </form>
+
+                {{-- Register Link --}}
+                <div class="mt-8 text-center">
+                    <p class="text-sm text-gray-600">
+                        Belum memiliki akun? 
+                        <a href="{{ route('register') }}" class="font-bold text-indigo-600 hover:text-indigo-500 transition">
+                            Daftar Gratis
+                        </a>
+                    </p>
+                </div>
+
+                {{-- Footer Text --}}
+                <div class="mt-8 border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
+                    &copy; {{ date('Y') }} {{ config('app.name', 'EventPro') }}. All rights reserved.
+                </div>
+            </div>
         </div>
-
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
-
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+    </div>
+</body>
+</html>
