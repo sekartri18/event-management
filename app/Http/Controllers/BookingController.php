@@ -63,11 +63,14 @@ class BookingController extends Controller
         $booking->load('event', 'attendee');
 
         try {
+            // ✅ PERBAIKAN BOOLEAN CASTING (Sangat Penting)
             Config::$serverKey = env('MIDTRANS_SERVER_KEY');
-            Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+            Config::$isProduction = filter_var(env('MIDTRANS_IS_PRODUCTION', false), FILTER_VALIDATE_BOOLEAN);
+            
             Config::$isSanitized = true;
             Config::$is3ds = true;
-
+            Config::$overrideNotifUrl = 'https://tridactyl-archie-noncollectable.ngrok-free.dev/midtrans/notification';
+                
             $orderId = 'BOOKING-' . $booking->id . '-' . time();
 
             $params = [
@@ -188,14 +191,17 @@ class BookingController extends Controller
     // ==============================
     public function notificationHandler(Request $request)
     {
+        // ✅ PERBAIKAN BOOLEAN CASTING (Sangat Penting)
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
-        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+        Config::$isProduction = filter_var(env('MIDTRANS_IS_PRODUCTION', false), FILTER_VALIDATE_BOOLEAN);
 
         try {
+            // Gunakan library Midtrans untuk memproses data mentah POST
             $notif = new Notification();
         } catch (\Exception $e) {
-            Log::error("Webhook Error: " . $e->getMessage());
-            return response()->json(['message' => 'Invalid notification'], 400);
+            // Jika ada error inisiasi Midtrans (misal karena casting boolean salah), catat
+            Log::error("Webhook Init Error: " . $e->getMessage());
+            return response()->json(['message' => 'Notification handler init failed'], 500);
         }
 
         $transactionStatus = $notif->transaction_status;
@@ -206,11 +212,17 @@ class BookingController extends Controller
         $parts = explode('-', $orderId);
         $bookingId = $parts[1] ?? null;
 
+        // ✅ Perbaikan: Pastikan bookingId adalah ID numerik
+        if (!is_numeric($bookingId)) {
+            Log::warning("Webhook: Order ID format tidak valid: " . $orderId);
+            return response()->json(['message' => 'Order ID format invalid']);
+        }
+        
         $booking = Booking::find($bookingId);
 
         if (!$booking) {
-            Log::warning("Webhook: Order ID $orderId tidak ditemukan.");
-            return response()->json(['message' => 'Order ID tidak ditemukan']);
+            Log::warning("Webhook: Booking ID $bookingId tidak ditemukan.");
+            return response()->json(['message' => 'Booking ID tidak ditemukan']);
         }
 
         $newStatus = null;
@@ -225,7 +237,7 @@ class BookingController extends Controller
             $newStatus = 'failed';
         }
 
-        if ($newStatus) {
+        if ($newStatus && $booking->status_pembayaran !== $newStatus) { // Tambahkan cek status untuk mencegah update ganda
             DB::beginTransaction();
             try {
                 $booking->status_pembayaran = $newStatus;
@@ -233,9 +245,11 @@ class BookingController extends Controller
                 $booking->save();
 
                 if ($newStatus === 'paid') {
+                    // Hanya buat QR code jika status berubah menjadi paid
                     $booking->load('tickets');
                     foreach ($booking->tickets as $ticket) {
-                        if (Str::isUuid($ticket->qr_code)) {
+                        // Pastikan QR code hanya di-generate sekali
+                        if (Str::isUuid($ticket->qr_code) || $ticket->qr_code === null) {
                             $ticket->qr_code = $ticket->id . '-' . Str::random(10);
                             $ticket->save();
                         }

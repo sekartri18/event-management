@@ -11,14 +11,23 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        
+        // 1. Alias Middleware (Kode lama Anda)
         $middleware->alias([
             'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
             'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
-            'guest' => \Illuminate\Auth\Middleware\RedirectIfAuthenticated::class, // ← ini yang benar
+            'guest' => \Illuminate\Auth\Middleware\RedirectIfAuthenticated::class,
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-
-            // Middleware custom
             'permission' => \App\Http\Middleware\CheckPermission::class,
+        ]);
+
+        // =================================================================
+        // ✅ 2. MATIKAN CSRF UNTUK MIDTRANS (WAJIB DITAMBAHKAN)
+        // =================================================================
+        // Tanpa ini, Laravel akan menolak notifikasi Midtrans (Error 419)
+        // karena Midtrans tidak mengirim token keamanan CSRF.
+        $middleware->validateCsrfTokens(except: [
+            'midtrans/notification', // Izinkan route ini diakses tanpa token
         ]);
 
     })

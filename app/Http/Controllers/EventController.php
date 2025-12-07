@@ -9,6 +9,9 @@ use App\Models\Booking;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Midtrans\Snap;
+use Midtrans\Config;
 use Spatie\CalendarLinks\Link;
 
 class EventController extends Controller
@@ -18,51 +21,35 @@ class EventController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Ambil user yang sedang login
         $user = Auth::user();
 
-        // 2. Mulai Query Builder
         $query = Event::query()
             ->with('organizer') 
             ->withSum(['bookings' => function ($q) {
                 $q->where('status_pembayaran', 'paid');
             }], 'total_amount')
-            ->withSum('ticketTypes', 'kuota') // Hitung total sisa kuota tiket
+            ->withSum('ticketTypes', 'kuota')
             ->orderBy('tanggal_mulai', 'asc');
 
-        // 3. Logika pemfilteran event berdasarkan Role
-        if ($user) {
-            if ($user->isOrganizer()) {
-                // Organizer hanya melihat event yang dia buat
-                $query->where('organizer_id', $user->id);
-            }
+        if ($user && $user->isOrganizer()) {
+            $query->where('organizer_id', $user->id);
         }
 
-        // ==============================================
-        // LOGIKA FILTER PENCARIAN
-        // ==============================================
-
-        // Filter 1: Pencarian berdasarkan Nama Event
+        // Filter Pencarian
         if ($search = $request->query('search')) {
             $query->where('nama_event', 'LIKE', '%' . $search . '%');
         }
 
-        // Filter 2: Filter berdasarkan Status
         if ($status = $request->query('status')) {
-            // Kita normalisasi input pencarian juga ke huruf kecil
             if (in_array(strtolower($status), ['upcoming', 'ongoing', 'finished'])) {
                 $query->where('status', $status);
             }
         }
 
-        // 4. Eksekusi query dengan Pagination
         $events = $query->paginate(10);
 
-        // ==============================================
-        // HITUNG TOTAL DANA MASUK (GLOBAL HEADER)
-        // ==============================================
+        // Hitung Total Dana Masuk
         $totalDanaMasuk = 0;
-
         if ($user) {
             if ($user->isAdmin()) {
                 $totalDanaMasuk = Booking::where('status_pembayaran', 'paid')->sum('total_amount');
@@ -75,10 +62,7 @@ class EventController extends Controller
             }
         }
 
-        // 5. Tentukan view berdasarkan role user
         $viewName = ($user && $user->isAdmin()) ? 'events.index-admin' : 'events.index';
-
-        // 6. Kirim variabel ke view
         return view($viewName, compact('events', 'totalDanaMasuk'));
     }
 
@@ -128,46 +112,52 @@ class EventController extends Controller
     }
 
     /**
-     * Tampilkan detail event
+     * Tampilkan detail event (BAGIAN INI YANG TADI ERROR)
      */
     public function show(Event $event)
     {
-        // 1. Authorization Check (Pastikan Policy 'view' sudah mengizinkan status 'finished')
         Gate::authorize('view', $event); 
 
-        // 2. Load Data Relasi
         $event->load('ticketTypes', 'organizer', 'reviews.attendee');
 
-        // 3. Calendar Links
-        $link = Link::create(
-            $event->nama_event,
-            $event->tanggal_mulai,
-            $event->tanggal_selesai
-        )->description($event->deskripsi)->address($event->lokasi);
+        // --- PERBAIKAN LOGIKA KALENDER ---
+        try {
+            // Pastikan format tanggal benar untuk library spatie
+            $from = \DateTime::createFromFormat('Y-m-d H:i:s', $event->tanggal_mulai);
+            $to   = \DateTime::createFromFormat('Y-m-d H:i:s', $event->tanggal_selesai);
+            
+            // Fallback jika format string tanggal berbeda
+            if (!$from) $from = new \DateTime($event->tanggal_mulai);
+            if (!$to) $to = new \DateTime($event->tanggal_selesai);
 
-        $calendarLinks = [
-            'google' => $link->google(),
-            'ics' => $link->ics(),
-        ];
+            $link = Link::create($event->nama_event, $from, $to)
+                ->description($event->deskripsi ?? '-')
+                ->address($event->lokasi ?? '-');
 
-        // 4. Rating
+            $calendarLinks = [
+                'google' => $link->google(),
+                'ics' => $link->ics(),
+            ];
+        } catch (\Exception $e) {
+            $calendarLinks = ['google' => '#', 'ics' => '#'];
+        }
+
+        // Rating
         $averageRating = $event->reviews->count() > 0 ? $event->reviews->avg('rating') : 0;
 
-        // 5. Logic Review (DIPERBAIKI)
+        // Logic Review
         $user = Auth::user();
         $canReview = false; 
         $reviewError = null;
 
         if ($user && $user->isAttendee()) {
             $hasPaidBooking = $user->bookings()
-                                   ->where('event_id', $event->id)
-                                   ->where('status_pembayaran', 'paid')
-                                   ->exists();
+                ->where('event_id', $event->id)
+                ->where('status_pembayaran', 'paid')
+                ->exists();
             
             $hasAlreadyReviewed = $event->reviews->where('attendee_id', $user->id)->isNotEmpty();
 
-            // PERBAIKAN PENTING: Gunakan strtolower() untuk menangani "Finished" vs "finished"
-            // Ini memastikan logika review berjalan meskipun data di DB memakai huruf kapital.
             if (strtolower($event->status) == 'finished') {
                 if ($hasPaidBooking && !$hasAlreadyReviewed) {
                     $canReview = true;
@@ -181,14 +171,11 @@ class EventController extends Controller
             }
         }
 
-        // Kirim pesan error review ke session (agar bisa ditampilkan di view jika perlu)
         if ($reviewError) {
             session()->flash('review_error', $reviewError);
         }
 
-        // Pilih view berdasarkan role user
         $viewName = ($user && $user->isAdmin()) ? 'events.show-admin' : 'events.show';
-
         return view($viewName, compact('event', 'calendarLinks', 'averageRating', 'canReview'));
     }
 
