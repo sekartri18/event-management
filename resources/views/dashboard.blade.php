@@ -17,13 +17,23 @@
                             Halo, {{ Auth::user()->name }}!
                         </h1>
                         <p class="text-indigo-100 text-lg md:text-xl">
-                            Siap untuk pengalaman tak terlupakan? Mulailah petualangan event Anda sekarang.
+                            @if(Auth::user()->role->name === 'admin')
+                                Selamat datang di Panel Admin. Kelola sistem dan pengguna dari sini.
+                            @elseif(Auth::user()->role->name === 'organizer')
+                                Kelola event Anda dan pantau penjualan tiket dengan mudah.
+                            @else
+                                Siap untuk pengalaman tak terlupakan? Mulailah petualangan event Anda sekarang.
+                            @endif
                         </p>
                     </div>
 
                     <a href="{{ route('events.index') }}" 
                        class="w-full md:w-auto inline-flex justify-center items-center px-10 py-3 bg-white text-indigo-700 border-2 border-white rounded-full font-bold text-lg uppercase tracking-wider hover:bg-indigo-50 hover:text-indigo-800 transition duration-300 shadow-xl whitespace-nowrap">
-                        Cari Event Sekarang &rarr;
+                        @if(Auth::user()->role->name === 'attendee')
+                            Cari Event &rarr;
+                        @else
+                            Kelola Event &rarr;
+                        @endif
                     </a>
                 </div>
             </div>

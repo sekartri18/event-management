@@ -5,15 +5,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Event;
 use App\Models\Ticket;
+use App\Models\Booking; 
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
-use Spatie\CalendarLinks\Link; // <-- Ini sudah benar
+use Spatie\CalendarLinks\Link;
 
 class EventController extends Controller
 {
     /**
-     * Tampilkan daftar event... (Method index Anda sudah benar)
+     * Tampilkan daftar event (Index)
      */
     public function index(Request $request)
     {
@@ -21,48 +22,65 @@ class EventController extends Controller
         $user = Auth::user();
 
         // 2. Mulai Query Builder
-        $query = Event::query()->orderBy('tanggal_mulai', 'asc');
+        $query = Event::query()
+            ->with('organizer') 
+            ->withSum(['bookings' => function ($q) {
+                $q->where('status_pembayaran', 'paid');
+            }], 'total_amount')
+            ->withSum('ticketTypes', 'kuota') // Hitung total sisa kuota tiket
+            ->orderBy('tanggal_mulai', 'asc');
 
-        // 3. Logika pemfilteran event berdasarkan Role (Organizer hanya lihat miliknya)
+        // 3. Logika pemfilteran event berdasarkan Role
         if ($user) {
             if ($user->isOrganizer()) {
                 // Organizer hanya melihat event yang dia buat
                 $query->where('organizer_id', $user->id);
             }
-            // Admin dan Attendee melihat semua event
         }
 
         // ==============================================
-        // LOGIKA PENAMBAHAN FILTER (UNTUK SEARCH & FILTER ATTENDEE)
+        // LOGIKA FILTER PENCARIAN
         // ==============================================
 
-        // Filter 1: Pencarian berdasarkan Nama Event (Search Bar)
+        // Filter 1: Pencarian berdasarkan Nama Event
         if ($search = $request->query('search')) {
             $query->where('nama_event', 'LIKE', '%' . $search . '%');
         }
 
         // Filter 2: Filter berdasarkan Status
         if ($status = $request->query('status')) {
-            // Pastikan status yang dicari valid
-            if (in_array($status, ['upcoming', 'ongoing', 'finished'])) {
+            // Kita normalisasi input pencarian juga ke huruf kecil
+            if (in_array(strtolower($status), ['upcoming', 'ongoing', 'finished'])) {
                 $query->where('status', $status);
             }
         }
 
-        // Filter 3: Filter berdasarkan Lokasi
-        if ($location = $request->query('location')) {
-            $query->where('lokasi', 'LIKE', '%' . $location . '%');
+        // 4. Eksekusi query dengan Pagination
+        $events = $query->paginate(10);
+
+        // ==============================================
+        // HITUNG TOTAL DANA MASUK (GLOBAL HEADER)
+        // ==============================================
+        $totalDanaMasuk = 0;
+
+        if ($user) {
+            if ($user->isAdmin()) {
+                $totalDanaMasuk = Booking::where('status_pembayaran', 'paid')->sum('total_amount');
+            } elseif ($user->isOrganizer()) {
+                $totalDanaMasuk = Booking::where('status_pembayaran', 'paid')
+                    ->whereHas('event', function ($q) use ($user) {
+                        $q->where('organizer_id', $user->id);
+                    })
+                    ->sum('total_amount');
+            }
         }
 
-        // 4. Eksekusi query
-        $events = $query->paginate(10); // Gunakan paginate jika ingin pagination
-
-        // 5. Kirim variabel $events ke view
-        return view('events.index', compact('events'));
+        // 5. Kirim variabel ke view
+        return view('events.index', compact('events', 'totalDanaMasuk'));
     }
 
     /**
-     * Form untuk buat event... (Method create Anda sudah benar)
+     * Form untuk buat event
      */
     public function create()
     {
@@ -71,13 +89,12 @@ class EventController extends Controller
     }
 
     /**
-     * Simpan event baru... (Method store Anda sudah benar)
+     * Simpan event baru
      */
     public function store(Request $request)
     {
         Gate::authorize('create', Event::class);
 
-        // 1. Validasi Input
         $validated = $request->validate([
             'nama_event' => 'required|string|max:255',
             'tanggal_mulai' => 'required|date',
@@ -89,16 +106,12 @@ class EventController extends Controller
         ]);
 
         $imagePath = null;
-
-        // 2. Handle File Upload Gambar
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('events', 'public');
         }
 
-        // 3. Simpan Event ke Database
-        $organizerId = Auth::id();
         Event::create([
-            'organizer_id' => $organizerId,
+            'organizer_id' => Auth::id(),
             'nama_event' => $validated['nama_event'],
             'tanggal_mulai' => $validated['tanggal_mulai'],
             'tanggal_selesai' => $validated['tanggal_selesai'],
@@ -113,49 +126,46 @@ class EventController extends Controller
 
     /**
      * Tampilkan detail event
-     *
-     * INI ADALAH METHOD YANG DIPERBAIKI
      */
     public function show(Event $event)
     {
-        // 1. Eager load relasi yang dibutuhkan
-        //    PERBAIKAN: Tambahkan 'reviews.attendee'
+        // 1. Authorization Check (Pastikan Policy 'view' sudah mengizinkan status 'finished')
+        Gate::authorize('view', $event); 
+
+        // 2. Load Data Relasi
         $event->load('ticketTypes', 'organizer', 'reviews.attendee');
 
-        // 2. Buat Link Kalender (Kode Anda sudah benar)
+        // 3. Calendar Links
         $link = Link::create(
             $event->nama_event,
-            $event->tanggal_mulai, // Ini akan menjadi objek Carbon karena $casts
+            $event->tanggal_mulai,
             $event->tanggal_selesai
-        )->description($event->deskripsi)
-         ->address($event->lokasi);
+        )->description($event->deskripsi)->address($event->lokasi);
 
         $calendarLinks = [
             'google' => $link->google(),
-            'ics' => $link->ics(), // Untuk Outlook, Apple Calendar, dll.
+            'ics' => $link->ics(),
         ];
 
-        // 3. TAMBAHAN: Hitung rata-rata rating
-        //    PERBAIKAN: Cek count() > 0 untuk menghindari Division by Zero
+        // 4. Rating
         $averageRating = $event->reviews->count() > 0 ? $event->reviews->avg('rating') : 0;
 
-        // 4. TAMBAHAN: Tentukan apakah user saat ini bisa memberi review
+        // 5. Logic Review (DIPERBAIKI)
         $user = Auth::user();
         $canReview = false; 
-        $reviewError = null; // Variabel untuk menyimpan pesan error
+        $reviewError = null;
 
         if ($user && $user->isAttendee()) {
-            // Cek apakah dia punya tiket lunas (sesuai Model User & Booking)
             $hasPaidBooking = $user->bookings()
-                                     ->where('event_id', $event->id)
-                                     ->where('status_pembayaran', 'paid')
-                                     ->exists();
+                                   ->where('event_id', $event->id)
+                                   ->where('status_pembayaran', 'paid')
+                                   ->exists();
             
-            // Cek apakah dia sudah pernah review (sesuai Model User & Review)
-            // PERBAIKAN: Gunakan 'attendee_id'
             $hasAlreadyReviewed = $event->reviews->where('attendee_id', $user->id)->isNotEmpty();
 
-            if ($event->status == 'finished') {
+            // PERBAIKAN PENTING: Gunakan strtolower() untuk menangani "Finished" vs "finished"
+            // Ini memastikan logika review berjalan meskipun data di DB memakai huruf kapital.
+            if (strtolower($event->status) == 'finished') {
                 if ($hasPaidBooking && !$hasAlreadyReviewed) {
                     $canReview = true;
                 } elseif ($hasAlreadyReviewed) {
@@ -168,23 +178,16 @@ class EventController extends Controller
             }
         }
 
-        // 5. TAMBAHAN: Kirim pesan error (jika ada) ke session agar bisa ditampilkan di view
+        // Kirim pesan error review ke session (agar bisa ditampilkan di view jika perlu)
         if ($reviewError) {
             session()->flash('review_error', $reviewError);
         }
 
-        // 6. PERBAIKAN: Kirim semua data ke view
-        return view('events.show', compact(
-            'event', 
-            'calendarLinks', 
-            'averageRating', 
-            'canReview'
-        ));
+        return view('events.show', compact('event', 'calendarLinks', 'averageRating', 'canReview'));
     }
 
-
     /**
-     * Form untuk edit event... (Method edit Anda sudah benar)
+     * Form untuk edit event
      */
     public function edit(Event $event)
     {
@@ -194,7 +197,7 @@ class EventController extends Controller
     }
 
     /**
-     * Update event... (Method update Anda sudah benar)
+     * Update event
      */
     public function update(Request $request, Event $event)
     {
@@ -213,13 +216,10 @@ class EventController extends Controller
         $dataToUpdate = $request->except(['image', '_token', '_method']);
 
         if ($request->hasFile('image')) {
-            
             if ($event->gambar) {
                 Storage::disk('public')->delete($event->gambar);
             }
-            
             $dataToUpdate['gambar'] = $request->file('image')->store('events', 'public');
-        
         } 
 
         $event->update($dataToUpdate);
@@ -228,7 +228,7 @@ class EventController extends Controller
     }
 
     /**
-     * Hapus event... (Method destroy Anda sudah benar)
+     * Hapus event
      */
     public function destroy(Event $event)
     {
@@ -243,7 +243,7 @@ class EventController extends Controller
     }
 
     /**
-     * Method showAttendees... (Method showAttendees Anda sudah benar)
+     * Show Attendees List (Organizer)
      */
     public function showAttendees(Event $event)
     {
@@ -261,7 +261,7 @@ class EventController extends Controller
     }
 
     /**
-     * Menampilkan halaman scanner... (Method showCheckInScanner Anda sudah benar)
+     * Show Check-In Scanner
      */
     public function showCheckInScanner(Event $event)
     {
@@ -270,7 +270,7 @@ class EventController extends Controller
     }
 
     /**
-     * Memproses data QR Code... (Method processCheckIn Anda sudah benar)
+     * Process Check-In Logic
      */
     public function processCheckIn(Request $request)
     {
@@ -286,21 +286,21 @@ class EventController extends Controller
         Gate::authorize('update', $event);
 
         $ticket = Ticket::with('booking', 'ticketType')
-                            ->where('qr_code', $qrCode)
-                            ->first();
+                        ->where('qr_code', $qrCode)
+                        ->first();
 
         if (!$ticket) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'TIKET TIDAK VALID. Kode QR tidak terdaftar.'
-            ], 404); // Not Found
+            ], 404);
         }
 
         if ($ticket->booking->event_id != $eventId) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'TIKET SALAH EVENT. Tiket ini valid, tapi bukan untuk event ini.'
-            ], 400); // Bad Request
+            ], 400);
         }
 
         if ($ticket->statusCheckIn == 'checked-in') {
@@ -308,14 +308,14 @@ class EventController extends Controller
                 'status' => 'warning',
                 'message' => 'TIKET SUDAH DIGUNAKAN. Tiket ini sudah di-scan pada ' . ($ticket->tanggalCheckIn ? $ticket->tanggalCheckIn->format('d M Y H:i') : 'sebelumnya'),
                 'ticket' => $ticket, 
-            ], 409); // Conflict
+            ], 409);
         }
 
         if ($ticket->booking->status_pembayaran != 'paid') {
              return response()->json([
                 'status' => 'error',
                 'message' => 'TIKET BELUM LUNAS. Pembayaran untuk booking ini masih pending.'
-            ], 402); // Payment Required
+            ], 402);
         }
 
         $ticket->statusCheckIn = 'checked-in';
@@ -326,6 +326,6 @@ class EventController extends Controller
             'status' => 'success',
             'message' => 'CHECK-IN BERHASIL: ' . $ticket->nama_pemegang_tiket,
             'ticket' => $ticket,
-        ], 200); // OK
+        ], 200);
     }
 }

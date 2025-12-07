@@ -5,7 +5,6 @@
                 $user = Auth::user();
                 $headerText = 'Jelajahi Semua Event'; 
                 
-                // Ubah judul berdasarkan role
                 if ($user->isOrganizer()) {
                     $headerText = 'Manajemen Event Anda';
                 } elseif ($user->isAdmin()) {
@@ -16,45 +15,40 @@
                 {{ __($headerText) }}
             </h2>
             
-            {{-- ========================================================== --}}
-            {{-- !! PERBAIKAN DI SINI: Menggunakan Policy Model !! --}}
-            {{-- ========================================================== --}}
-            {{-- Diubah dari @can('create_event') menjadi @can('create', App\Models\Event::class) --}}
             @can('create', App\Models\Event::class)
                 <a href="{{ route('events.create') }}" 
                    class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-semibold text-sm transition shadow-md">
-                    + Buat Event Baru
+                   + Buat Event Baru
                 </a>
             @endcan
-            {{-- ========================================================== --}}
-            {{-- !! AKHIR PERBAIKAN !! --}}
-            {{-- ========================================================== --}}
         </div>
     </x-slot>
 
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
-            {{-- KARTU RINGKASAN KHUSUS ORGANIZER / ADMIN --}}
+            {{-- KARTU TOTAL DANA MASUK (KHUSUS ADMIN & ORGANIZER) --}}
             @if(Auth::user()->isOrganizer() || Auth::user()->isAdmin())
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg border-l-4 border-{{ Auth::user()->isAdmin() ? 'red' : 'indigo' }}-500 mb-6">
-                    <div class="p-6 text-gray-900">
-                        @if(Auth::user()->isOrganizer())
-                            <h3 class="text-xl font-bold text-indigo-700 mb-2">👋 Selamat Datang di Dashboard Event Anda!</h3>
-                            <p class="mb-4 text-gray-600">Event di bawah ini adalah event yang Anda kelola. Cepat periksa status, edit detail, atau lihat pendaftar.</p>
-                            <div class="flex space-x-6 text-sm">
-                                <span class="text-gray-700">Event Dibuat: **{{ count($events) }}**</span> 
-                                <span class="text-gray-700">Event Aktif: **...**</span>
-                                <span class="text-gray-700">Total Pendaftar: **...**</span>
+                <div class="mb-6 bg-white overflow-hidden shadow-xl sm:rounded-lg border-l-4 border-green-500">
+                    <div class="p-6 flex items-center justify-between">
+                        <div>
+                            <div class="text-gray-500 text-sm font-bold uppercase tracking-wider">
+                                Total Dana Masuk (Verifikasi Paid)
                             </div>
-                        @elseif(Auth::user()->isAdmin())
-                            <h3 class="text-xl font-bold text-red-700 mb-2">👁️ Mode Admin Oversight Aktif</h3>
-                            <p class="mb-4 text-gray-600">Anda melihat **semua** event dalam sistem untuk tujuan audit.</p>
-                        @endif
+                            <div class="text-3xl font-extrabold text-gray-800 mt-1">
+                                Rp {{ number_format($totalDanaMasuk ?? 0, 0, ',', '.') }}
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">*Akumulasi pendapatan dari semua event yang lunas.</p>
+                        </div>
+                        <div class="p-3 bg-green-100 rounded-full text-green-600 hidden sm:block">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
                     </div>
                 </div>
             @endif
-            
+
             @if (session('success'))
                 <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md" role="alert">
                     <p class="font-bold">Berhasil!</p>
@@ -62,12 +56,10 @@
                 </div>
             @endif
 
-            {{-- START: FORM PENCARIAN DAN FILTER BARU (Diperbarui) --}}
+            {{-- FORM PENCARIAN --}}
             <div class="mb-6 p-4 bg-white shadow-md rounded-lg">
-                {{-- Menggunakan grid 4 kolom untuk kontrol layout --}}
                 <form method="GET" action="{{ route('events.index') }}" class="grid grid-cols-1 gap-4 md:grid-cols-4 items-end">
                     
-                    {{-- Search Input (Nama Event) - Mengambil 2 kolom --}}
                     <div class="md:col-span-2">
                         <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Cari Event (Nama)</label>
                         <x-text-input type="text" name="search" id="search" 
@@ -76,7 +68,6 @@
                                       class="w-full" />
                     </div>
                     
-                    {{-- Filter Status - Mengambil 1 kolom --}}
                     <div class="md:col-span-1">
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Filter Status</label>
                         <select name="status" id="status" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full">
@@ -87,26 +78,18 @@
                         </select>
                     </div>
 
-                    {{-- Tombol Submit dan Reset - Mengambil 1 kolom, diatur di pojok kanan --}}
-                    {{-- flex space-x-2 dan justify-end memastikan tombol di kanan --}}
                     <div class="md:col-span-1 flex space-x-2 justify-end"> 
-                        
-                        {{-- 1. Tombol Reset --}}
                         <a href="{{ route('events.index') }}" 
                            class="bg-white text-gray-800 px-6 py-2 rounded-md hover:bg-gray-100 text-center transition font-semibold border border-gray-400 shadow-sm whitespace-nowrap">
                             Reset
                         </a>
-
-                        {{-- 2. Tombol Cari --}}
                         <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition font-semibold border border-blue-600 shadow-md whitespace-nowrap">
                             Cari
                         </button>
                     </div>
                 </form>
             </div>
-            {{-- END: FORM PENCARIAN DAN FILTER BARU --}}
 
-            {{-- Menampilkan pesan jika tidak ada event yang ditemukan setelah filter --}}
             @if(request()->hasAny(['search', 'status', 'location']) && $events->isEmpty())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center mb-6">
                     <p class="text-red-500 text-lg">Tidak ada event yang ditemukan dengan kriteria tersebut. 😥</p>
@@ -114,8 +97,9 @@
                 </div>
             @endif
 
-
-            {{-- START: CARD VIEW (Mobile Only, dari kode lama Anda) --}}
+            {{-- ========================================================= --}}
+            {{-- START: CARD VIEW (Mobile) --}}
+            {{-- ========================================================= --}}
             @forelse($events as $event)
                 @php
                     $statusColor = match($event->status) {
@@ -130,11 +114,12 @@
                         'finished' => '✅',
                         default => '❓',
                     };
+                    // Ambil Sisa Tiket (handle null jika belum ada tiket)
+                    $sisaTiket = $event->ticket_types_sum_kuota ?? 0;
                 @endphp
 
                 <div class="bg-white overflow-hidden shadow-lg rounded-xl mb-6 p-5 border border-gray-100 lg:hidden">
                     
-                    {{-- BLOK GAMBAR (Mobile) --}}
                     @if ($event->gambar)
                         <div class="mb-4 h-40 overflow-hidden rounded-lg">
                             <img src="{{ Storage::url($event->gambar) }}" alt="{{ $event->nama_event }}" class="w-full h-full object-cover">
@@ -157,6 +142,18 @@
                     </div>
 
                     <div class="space-y-1 text-gray-600 text-sm">
+                        {{-- INFO SISA TIKET BARU (MOBILE) --}}
+                        <p class="flex items-center space-x-2 font-medium {{ $sisaTiket > 0 ? 'text-indigo-600' : 'text-red-500' }}">
+                            <span>🎟️</span>
+                            <span>
+                                @if($sisaTiket > 0)
+                                    Tiket Tersedia: <strong>{{ number_format($sisaTiket) }}</strong>
+                                @else
+                                    Habis Terjual (Sold Out)
+                                @endif
+                            </span>
+                        </p>
+
                         <p class="flex items-center space-x-2">
                             <span class="text-gray-500">📍</span>
                             <span>{{ $event->lokasi }}</span>
@@ -168,6 +165,16 @@
                         <p class="text-xs pt-2 italic text-gray-400">Oleh: {{ $event->organizer->name ?? 'Admin' }}</p>
                     </div>
 
+                    {{-- TOTAL PENDAPATAN (Mobile - Admin/Organizer Only) --}}
+                    @if(Auth::user()->isOrganizer() || Auth::user()->isAdmin())
+                        <div class="mt-4 p-3 bg-green-50 rounded-lg border border-green-200 text-center">
+                            <span class="text-xs text-gray-500 uppercase font-bold">Pendapatan Event</span>
+                            <div class="text-lg font-bold text-green-700">
+                                Rp {{ number_format($event->bookings_sum_total_amount ?? 0, 0, ',', '.') }}
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="mt-4 text-right">
                         <a href="{{ route('events.show', $event) }}" 
                            class="text-indigo-600 hover:text-indigo-800 font-medium text-sm transition">
@@ -176,7 +183,6 @@
                     </div>
                 </div>
             @empty
-                {{-- Empty State (Mobile) --}}
                 @if(!request()->hasAny(['search', 'status', 'location']))
                     @if(Auth::user()->isOrganizer())
                         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center border-l-4 border-indigo-500 mb-6 lg:hidden">
@@ -196,17 +202,27 @@
             @endforelse
             {{-- END: CARD VIEW --}}
 
-            {{-- START: Table View (Desktop Only, dari kode lama Anda) --}}
+
+            {{-- ========================================================= --}}
+            {{-- START: TABLE VIEW (Desktop) --}}
+            {{-- ========================================================= --}}
             <div class="hidden lg:block bg-white overflow-hidden shadow-lg sm:rounded-lg">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/12">Gambar</th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/3">Nama Event</th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/4">Tanggal</th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/4">Lokasi</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/4">Nama Event</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/6">Lokasi</th>
                                 <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/6">Status</th>
+                                
+                                {{-- KOLOM BARU: KUOTA TIKET (Desktop Header) --}}
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/6">Kuota Tiket</th>
+
+                                @if(Auth::user()->isOrganizer() || Auth::user()->isAdmin())
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/6">Pendapatan</th>
+                                @endif
+                                
                                 <th class="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider w-1/12">Aksi</th>
                             </tr>
                         </thead>
@@ -219,9 +235,10 @@
                                         'finished' => 'text-red-600 bg-red-50',
                                         default => 'text-gray-600 bg-gray-50',
                                     };
+                                    // Ambil Sisa Tiket (handle null)
+                                    $sisaTiket = $event->ticket_types_sum_kuota ?? 0;
                                 @endphp
                                 <tr class="hover:bg-gray-50 transition duration-150">
-                                    {{-- Data Gambar (Desktop) --}}
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         @if ($event->gambar)
                                             <img src="{{ Storage::url($event->gambar) }}" alt="Thumbnail" class="h-10 w-10 object-cover rounded-md">
@@ -234,11 +251,9 @@
                                         <a href="{{ route('events.show', $event) }}" class="text-indigo-600 hover:text-indigo-800 transition">
                                             {{ $event->nama_event }}
                                         </a>
-                                        <p class="text-xs text-gray-500 mt-0.5">Oleh: {{ $event->organizer->name ?? 'Admin' }}</p>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {{ \Carbon\Carbon::parse($event->tanggal_mulai)->isoFormat('D MMM') }} - 
-                                        {{ \Carbon\Carbon::parse($event->tanggal_selesai)->isoFormat('D MMM YYYY') }}
+                                        <p class="text-xs text-gray-500 mt-0.5">
+                                            {{ \Carbon\Carbon::parse($event->tanggal_mulai)->isoFormat('D MMM YYYY') }}
+                                        </p>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {{ $event->lokasi }}
@@ -248,6 +263,23 @@
                                             {{ ucfirst($event->status) }}
                                         </span>
                                     </td>
+
+                                    {{-- ISI KOLOM KUOTA TIKET (Desktop) --}}
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        @if($sisaTiket > 0)
+                                            <span class="text-gray-700 font-bold">{{ number_format($sisaTiket) }}</span> 
+                                            <span class="text-gray-500 text-xs">tersedia</span>
+                                        @else
+                                            <span class="text-red-500 font-bold text-xs uppercase bg-red-50 px-2 py-1 rounded">Sold Out</span>
+                                        @endif
+                                    </td>
+
+                                    @if(Auth::user()->isOrganizer() || Auth::user()->isAdmin())
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
+                                            Rp {{ number_format($event->bookings_sum_total_amount ?? 0, 0, ',', '.') }}
+                                        </td>
+                                    @endif
+
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <a href="{{ route('events.show', $event) }}" 
                                            class="text-purple-600 hover:text-purple-800 transition font-bold">
@@ -257,7 +289,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-8 whitespace-nowrap text-lg text-gray-500 text-center">
+                                    <td colspan="{{ (Auth::user()->isOrganizer() || Auth::user()->isAdmin()) ? '7' : '6' }}" class="px-6 py-8 whitespace-nowrap text-lg text-gray-500 text-center">
                                         @if(request()->hasAny(['search', 'status', 'location']))
                                             Tidak ada event yang ditemukan dengan kriteria tersebut.
                                         @elseif(Auth::user()->isOrganizer())
@@ -273,7 +305,6 @@
                     </table>
                 </div>
             </div>
-            {{-- END: Table View --}}
             
         </div>
     </div>

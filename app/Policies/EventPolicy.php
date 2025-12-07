@@ -7,62 +7,45 @@ use App\Models\Event;
 
 class EventPolicy
 {
-    /**
-     * Method BEFORE: Memberikan Admin Utama (System Admin) akses penuh (Bypass Check).
-     * Method ini dieksekusi sebelum semua method policy lainnya.
-     * @param \App\Models\User $user
-     * @param string $ability
-     * @return bool|null
-     */
     public function before(User $user, string $ability): ?bool
     {
-        // Pengecekan role Admin menggunakan helper isAdmin() dari User Model
         if ($user->isAdmin()) { 
-            return true; // Jika Admin, lewati semua pengecekan policy di bawah
+            return true; 
         }
-
-        return null; // Lanjutkan ke method Policy yang spesifik
+        return null;
     }
 
-    // ==========================================================
-    // !! KODE BARU DITAMBAHKAN DI SINI !!
-    // ==========================================================
-    /**
-     * Tentukan apakah user bisa membuat event baru.
-     */
     public function create(User $user): bool
     {
-        // Hanya user yang memiliki permission 'create_event' yang bisa (Organizer/Admin)
         return $user->hasPermission('create_event');
     }
-    // ==========================================================
-    // !! AKHIR KODE BARU !!
-    // ==========================================================
 
-    // Policy view: Tidak perlu diubah, karena Admin sudah di-bypass di before()
+    /**
+     * PERBAIKAN DI SINI:
+     * Kita gunakan strtolower() agar tidak peduli huruf besar/kecil.
+     */
     public function view(User $user, Event $event): bool
     {
-        // Organizer yang membuat event bisa melihat eventnya
+        // 1. Organizer Pemilik Event: Selalu boleh
         if ($user->isOrganizer() && $user->id === $event->organizer_id) {
             return true; 
         }
-        // Attendee bisa melihat semua event
-        return $user->hasPermission('view_event'); 
+
+        // 2. Attendee / Public:
+        // Ubah status jadi huruf kecil semua sebelum dicek
+        $status = strtolower($event->status); 
+        
+        // Cek apakah status ada di daftar yang diperbolehkan
+        return in_array($status, ['upcoming', 'ongoing', 'finished']);
     }
 
-    // Policy update: Hanya Organizer pemilik event
     public function update(User $user, Event $event): bool
     {
-        // Admin sudah di-bypass oleh before()
-        return $user->id === $event->organizer_id 
-            && $user->hasPermission('edit_event');
+        return $user->id === $event->organizer_id && $user->hasPermission('edit_event');
     }
 
-    // Policy delete: Hanya Organizer pemilik event
     public function delete(User $user, Event $event): bool
     {
-        // Admin sudah di-bypass oleh before()
-        return $user->id === $event->organizer_id 
-            && $user->hasPermission('delete_event');
+        return $user->id === $event->organizer_id && $user->hasPermission('delete_event');
     }
 }
