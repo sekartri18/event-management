@@ -7,7 +7,6 @@
 <aside class="fixed top-0 left-0 h-full w-64 bg-white text-gray-800 shadow-xl z-30 transition-transform duration-300 transform -translate-x-full sm:translate-x-0">
     
     {{-- Logo / Judul Sidebar --}}
- 
     <div class="flex items-center justify-center h-16 border-b border-gray-200 bg-gray-50">
         <img src="{{ asset('images/eventpro.jpg') }}" alt="EventPro Logo" class="h-10 w-auto" />
     </div>
@@ -32,13 +31,24 @@
         </x-nav-link>
 
         {{-- Semua Event (Akses Admin) --}}
-        {{-- Menggunakan rute events.index, tapi karena Admin, kita cek apakah bukan rute admin.dashboard --}}
         <x-nav-link :href="route('events.index')" :active="request()->routeIs('events.index') || request()->routeIs('events.show') || request()->routeIs('events.edit') || request()->routeIs('events.create')"
             class="group flex items-center w-full py-2 px-3 text-base font-medium rounded-lg transition duration-150 ease-in-out border-none 
                 text-gray-700 hover:bg-gray-100 hover:text-indigo-600"
             activeClass="bg-indigo-50 font-extrabold text-indigo-600 border-l-4 border-indigo-600">
             <span class="mr-3 text-lg">›</span> {{ __('Semua Event') }}
         </x-nav-link>
+
+        {{-- ========================================================== --}}
+        {{-- MENU AKTIF: DATA PESERTA GLOBAL --}}
+        {{-- ========================================================== --}}
+        {{-- Sekarang sudah terhubung ke route 'admin.participants.index' --}}
+        <x-nav-link :href="route('admin.participants.index')" :active="request()->routeIs('admin.participants.index')"
+            class="group flex items-center w-full py-2 px-3 text-base font-medium rounded-lg transition duration-150 ease-in-out border-none 
+                text-gray-700 hover:bg-gray-100 hover:text-indigo-600"
+            activeClass="bg-indigo-50 font-extrabold text-indigo-600 border-l-4 border-indigo-600">
+            <span class="mr-3 text-lg">›</span> {{ __('Data Peserta') }}
+        </x-nav-link>
+        {{-- ========================================================== --}}
 
         {{-- Kelola Ulasan --}}
         <x-nav-link :href="route('admin.reviews.index')" :active="request()->routeIs('admin.reviews.*') || request()->routeIs('admin.reviews.index')"
@@ -61,7 +71,7 @@
 
     </nav>
     
-    {{-- Logout Link (Ditempatkan di bawah) --}}
+    {{-- Logout Link --}}
     <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
         <form method="POST" action="{{ route('logout') }}" class="w-full">
             @csrf

@@ -8,6 +8,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\TicketTypeController; 
 use App\Http\Controllers\CheckInController; 
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\AdminParticipantController; // <--- DITAMBAHKAN: Controller Peserta Global
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth; 
 
@@ -88,7 +89,7 @@ Route::middleware('auth')->group(function () {
     // RUTE CHECK-IN (SCANNER QR)
     // -------------------------------------------------------------
     Route::prefix('events/{event}')->name('events.checkin.')->group(function () {
-        // 1. Daftar Peserta
+        // 1. Daftar Peserta (Per Event)
         Route::get('attendees', [CheckInController::class, 'index']) 
             ->name('index')->middleware('permission:edit_event'); 
 
@@ -117,6 +118,10 @@ Route::middleware('auth')->group(function () {
 
         // Manajemen User
         Route::resource('users', UserController::class)->only(['index', 'edit', 'update', 'destroy']);
+
+        // RUTE BARU: DATA PESERTA GLOBAL (SEMUA EVENT)
+        // Menampilkan seluruh tiket/peserta dari semua event dalam satu tabel
+        Route::get('/participants', [AdminParticipantController::class, 'index'])->name('participants.index');
 
         // Manajemen Review (Hapus review spam dll)
         Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');

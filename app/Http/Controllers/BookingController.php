@@ -69,7 +69,7 @@ class BookingController extends Controller
             
             Config::$isSanitized = true;
             Config::$is3ds = true;
-            Config::$overrideNotifUrl = 'https://tridactyl-archie-noncollectable.ngrok-free.dev/midtrans/notification';
+            Config::$overrideNotifUrl = 'https://longanamous-arturo-enterally.ngrok-free.dev/midtrans/notification';
                 
             $orderId = 'BOOKING-' . $booking->id . '-' . time();
 

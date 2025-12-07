@@ -9,9 +9,6 @@ use App\Models\Booking;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
-use Midtrans\Snap;
-use Midtrans\Config;
 use Spatie\CalendarLinks\Link;
 
 class EventController extends Controller
@@ -23,23 +20,41 @@ class EventController extends Controller
     {
         $user = Auth::user();
 
+        // 1. Query Builder
         $query = Event::query()
             ->with('organizer') 
+            
+            // --- PERBAIKAN: Hitung Paid DAN Pending ---
+            
+            // Hitung Total Pendapatan (Gross) - Termasuk yang Pending
             ->withSum(['bookings' => function ($q) {
-                $q->where('status_pembayaran', 'paid');
+                $q->whereIn('status_pembayaran', ['paid', 'pending']);
             }], 'total_amount')
+            
+            // Hitung Sisa Kuota Tiket
             ->withSum('ticketTypes', 'kuota')
+            
+            // Hitung Jumlah Peserta/Transaksi (Paid + Pending)
+            ->withCount(['bookings as participants_count' => function ($q) {
+                $q->whereIn('status_pembayaran', ['paid', 'pending']);
+            }])
+            
+            // Hitung Rata-rata Rating
+            ->withAvg('reviews', 'rating')
+            
             ->orderBy('tanggal_mulai', 'asc');
 
+        // 2. Filter Organizer
         if ($user && $user->isOrganizer()) {
             $query->where('organizer_id', $user->id);
         }
 
-        // Filter Pencarian
+        // 3. Filter Pencarian
         if ($search = $request->query('search')) {
             $query->where('nama_event', 'LIKE', '%' . $search . '%');
         }
 
+        // 4. Filter Status
         if ($status = $request->query('status')) {
             if (in_array(strtolower($status), ['upcoming', 'ongoing', 'finished'])) {
                 $query->where('status', $status);
@@ -48,13 +63,16 @@ class EventController extends Controller
 
         $events = $query->paginate(10);
 
-        // Hitung Total Dana Masuk
+        // 5. Hitung Total Dana Masuk (Global Header) - Termasuk Pending
         $totalDanaMasuk = 0;
         if ($user) {
             if ($user->isAdmin()) {
-                $totalDanaMasuk = Booking::where('status_pembayaran', 'paid')->sum('total_amount');
+                // Admin: Hitung semua booking di sistem (Paid + Pending)
+                $totalDanaMasuk = Booking::whereIn('status_pembayaran', ['paid', 'pending'])
+                    ->sum('total_amount');
             } elseif ($user->isOrganizer()) {
-                $totalDanaMasuk = Booking::where('status_pembayaran', 'paid')
+                // Organizer: Hitung booking event miliknya (Paid + Pending)
+                $totalDanaMasuk = Booking::whereIn('status_pembayaran', ['paid', 'pending'])
                     ->whereHas('event', function ($q) use ($user) {
                         $q->where('organizer_id', $user->id);
                     })
@@ -62,7 +80,9 @@ class EventController extends Controller
             }
         }
 
+        // 6. Pilih View
         $viewName = ($user && $user->isAdmin()) ? 'events.index-admin' : 'events.index';
+        
         return view($viewName, compact('events', 'totalDanaMasuk'));
     }
 
@@ -112,7 +132,7 @@ class EventController extends Controller
     }
 
     /**
-     * Tampilkan detail event (BAGIAN INI YANG TADI ERROR)
+     * Tampilkan detail event
      */
     public function show(Event $event)
     {
@@ -120,24 +140,16 @@ class EventController extends Controller
 
         $event->load('ticketTypes', 'organizer', 'reviews.attendee');
 
-        // --- PERBAIKAN LOGIKA KALENDER ---
+        // Calendar Links
         try {
-            // Pastikan format tanggal benar untuk library spatie
-            $from = \DateTime::createFromFormat('Y-m-d H:i:s', $event->tanggal_mulai);
-            $to   = \DateTime::createFromFormat('Y-m-d H:i:s', $event->tanggal_selesai);
-            
-            // Fallback jika format string tanggal berbeda
-            if (!$from) $from = new \DateTime($event->tanggal_mulai);
-            if (!$to) $to = new \DateTime($event->tanggal_selesai);
+            $from = new \DateTime($event->tanggal_mulai);
+            $to   = new \DateTime($event->tanggal_selesai);
 
             $link = Link::create($event->nama_event, $from, $to)
                 ->description($event->deskripsi ?? '-')
                 ->address($event->lokasi ?? '-');
 
-            $calendarLinks = [
-                'google' => $link->google(),
-                'ics' => $link->ics(),
-            ];
+            $calendarLinks = ['google' => $link->google(), 'ics' => $link->ics()];
         } catch (\Exception $e) {
             $calendarLinks = ['google' => '#', 'ics' => '#'];
         }
@@ -145,7 +157,7 @@ class EventController extends Controller
         // Rating
         $averageRating = $event->reviews->count() > 0 ? $event->reviews->avg('rating') : 0;
 
-        // Logic Review
+        // Logic Review Permission
         $user = Auth::user();
         $canReview = false; 
         $reviewError = null;
@@ -158,6 +170,7 @@ class EventController extends Controller
             
             $hasAlreadyReviewed = $event->reviews->where('attendee_id', $user->id)->isNotEmpty();
 
+            // Gunakan strtolower agar 'Finished' terdeteksi
             if (strtolower($event->status) == 'finished') {
                 if ($hasPaidBooking && !$hasAlreadyReviewed) {
                     $canReview = true;
@@ -176,6 +189,7 @@ class EventController extends Controller
         }
 
         $viewName = ($user && $user->isAdmin()) ? 'events.show-admin' : 'events.show';
+
         return view($viewName, compact('event', 'calendarLinks', 'averageRating', 'canReview'));
     }
 
@@ -246,6 +260,7 @@ class EventController extends Controller
 
         $tickets = Ticket::with(['booking.user', 'ticketType'])
             ->whereHas('booking', function ($query) use ($event) {
+                // Tampilkan peserta yang sudah paid
                 $query->where('event_id', $event->id)
                       ->where('status_pembayaran', 'paid');
             })

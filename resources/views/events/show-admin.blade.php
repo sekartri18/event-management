@@ -79,18 +79,26 @@
                     </div>
                 </div>
 
-                {{-- Admin Panel --}}
-                <div class="md:col-span-1 bg-red-50 p-4 rounded-lg border border-red-200">
+                {{-- Admin Panel (Oversight & Actions) --}}
+                <div class="md:col-span-1 bg-red-50 p-4 rounded-lg border border-red-200 h-fit">
                     <h3 class="font-bold text-red-800 mb-4">Admin Oversight</h3>
                     <div class="space-y-3">
+                        
+                        {{-- TOMBOL: DAFTAR PESERTA --}}
+                        <a href="{{ route('events.checkin.index', $event) }}" 
+                           class="block w-full px-4 py-2 bg-white text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-50 text-center font-semibold text-sm shadow-sm transition">
+                            📋 Daftar Peserta
+                        </a>
+
                         <a href="{{ route('events.edit', $event) }}" 
-                           class="block w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-center font-semibold text-sm">
+                           class="block w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-center font-semibold text-sm shadow-sm transition">
                             ✏️ Edit Event
                         </a>
+                        
                         <form action="{{ route('events.destroy', $event) }}" method="POST" onsubmit="return confirm('Yakin menghapus event ini?');" class="w-full">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold text-sm">
+                            <button type="submit" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold text-sm shadow-sm transition">
                                 🗑️ Hapus Event
                             </button>
                         </form>
@@ -98,17 +106,19 @@
                 </div>
             </div>
 
-            {{-- Booking & Attendees Section --}}
+            {{-- Booking & Attendees Stats --}}
             <div class="p-6 sm:px-10 sm:py-8 border-t border-gray-200">
-                <h3 class="font-bold text-lg text-gray-800 mb-4">Pendapatan & Peserta</h3>
+                <h3 class="font-bold text-lg text-gray-800 mb-4">Pendapatan & Performa</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="bg-green-50 p-4 rounded-lg border border-green-200">
                         <p class="text-gray-600 text-sm font-semibold">Total Pendapatan</p>
+                        {{-- Menggunakan data dari withSum controller --}}
                         <p class="text-2xl font-bold text-green-700">Rp {{ number_format($event->bookings_sum_total_amount ?? 0, 0, ',', '.') }}</p>
                     </div>
                     <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
                         <p class="text-gray-600 text-sm font-semibold">Jumlah Booking</p>
-                        <p class="text-2xl font-bold text-blue-700">{{ $event->bookings_count ?? 0 }}</p>
+                        {{-- FIX: Menggunakan 'participants_count' agar sesuai query controller --}}
+                        <p class="text-2xl font-bold text-blue-700">{{ $event->participants_count ?? 0 }}</p>
                     </div>
                     <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
                         <p class="text-gray-600 text-sm font-semibold">Rating Rata-rata</p>
