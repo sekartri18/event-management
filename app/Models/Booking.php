@@ -17,6 +17,7 @@ class Booking extends Model
         'attendee_id',
         'event_id',
         'total_amount',
+        'admin_fee',
         'status_pembayaran',
         'tanggal_booking',
         'jumlah_tiket',

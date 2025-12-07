@@ -105,7 +105,7 @@ class BookingController extends Controller
     }
 
     // ==============================
-    // CREATE BOOKING
+    // CREATE BOOKING (FEE 5%)
     // ==============================
     public function store(Request $request, Event $event)
     {
@@ -126,17 +126,20 @@ class BookingController extends Controller
         try {
             DB::beginTransaction();
 
+            // 1. Buat Booking Awal (Total & Fee 0 dulu)
             $booking = Booking::create([
                 'attendee_id' => Auth::id(),
                 'event_id' => $event->id,
-                'total_amount' => 0,
+                'total_amount' => 0, 
+                'admin_fee' => 0, 
                 'status_pembayaran' => 'pending',
                 'tanggal_booking' => now(),
                 'jumlah_tiket' => count($validated['holders']),
             ]);
 
-            $totalAmount = 0;
+            $subTotal = 0; // Total murni harga tiket
 
+            // 2. Proses Tiket & Hitung Subtotal
             foreach ($validated['holders'] as $holder) {
                 $ticketType = TicketType::find($holder['type_id']);
 
@@ -145,7 +148,7 @@ class BookingController extends Controller
                     return back()->with('error', 'Stok tiket tidak tersedia.');
                 }
 
-                $totalAmount += $ticketType->price;
+                $subTotal += $ticketType->price;
 
                 $booking->tickets()->create([
                     'ticket_type_id' => $ticketType->id,
@@ -157,12 +160,22 @@ class BookingController extends Controller
                 $ticketType->decrement('kuota');
             }
 
-            $booking->update(['total_amount' => $totalAmount]);
+            // 3. HITUNG FEE BERDASARKAN PERSENTASE (5%)
+            // Rumus: Total Harga Tiket x 5%
+            $platformFee = $subTotal * 0.05; 
+
+            // 4. Update Booking dengan Total Akhir
+            $grandTotal = $subTotal + $platformFee;
+            
+            $booking->update([
+                'total_amount' => $grandTotal,
+                'admin_fee' => $platformFee
+            ]);
 
             DB::commit();
 
             return redirect()->route('bookings.checkout', $booking)
-                             ->with('success', 'Pemesanan berhasil. Silakan lanjut ke pembayaran.');
+                             ->with('success', 'Pemesanan berhasil. Biaya admin 5% telah ditambahkan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -170,7 +183,6 @@ class BookingController extends Controller
             return back()->with('error', 'Terjadi kesalahan dalam pemesanan.');
         }
     }
-
     // ==============================
     // MIDTRANS WEBHOOK HANDLER
     // ==============================

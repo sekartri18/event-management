@@ -12,11 +12,22 @@
                 <h1 class="text-3xl font-bold text-green-600 mb-4">Pembayaran Berhasil! 🎉</h1>
                 <p class="text-gray-700 mb-8">Terima kasih atas pemesanan Anda untuk event **{{ $booking->event->nama_event }}**.</p>
                 
-                <div class="border-t border-b py-4 mb-8">
-                    <p class="text-lg font-semibold text-gray-800">Total Pembayaran: 
-                        <span class="text-indigo-600">Rp{{ number_format($booking->total_amount, 0, ',', '.') }}</span>
-                    </p>
-                    <p class="text-sm text-gray-500">Metode Pembayaran: {{ $booking->payment_method }}</p>
+                {{-- RINCIAN PEMBAYARAN DIPERBARUI --}}
+                <div class="border-t border-b py-4 mb-8 text-left max-w-lg mx-auto">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-600">Subtotal Tiket:</span>
+                        <span class="font-semibold">Rp{{ number_format($booking->total_amount - $booking->admin_fee, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-600">Biaya Admin:</span>
+                        <span class="font-semibold">Rp{{ number_format($booking->admin_fee, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="border-t my-2"></div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-bold text-gray-800">Total Dibayar:</span>
+                        <span class="text-xl font-bold text-green-600">Rp{{ number_format($booking->total_amount, 0, ',', '.') }}</span>
+                    </div>
+                    <p class="text-xs text-center text-gray-400 mt-4">Metode Pembayaran: {{ $booking->payment_method }}</p>
                 </div>
 
                 <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Detail Tiket Anda ({{ $booking->tickets->count() }} Tiket)</h3>
