@@ -139,6 +139,10 @@ class EventController extends Controller
         Gate::authorize('view', $event); 
 
         $event->load('ticketTypes', 'organizer', 'reviews.attendee');
+        
+        // Load booking statistics untuk admin
+        $event->loadSum('bookings', 'total_amount');
+        $event->loadCount('bookings');
 
         // Calendar Links
         try {

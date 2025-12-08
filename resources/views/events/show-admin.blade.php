@@ -117,8 +117,7 @@
                     </div>
                     <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
                         <p class="text-gray-600 text-sm font-semibold">Jumlah Booking</p>
-                        {{-- FIX: Menggunakan 'participants_count' agar sesuai query controller --}}
-                        <p class="text-2xl font-bold text-blue-700">{{ $event->participants_count ?? 0 }}</p>
+                        <p class="text-2xl font-bold text-blue-700">{{ $event->bookings_count ?? 0 }}</p>
                     </div>
                     <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
                         <p class="text-gray-600 text-sm font-semibold">Rating Rata-rata</p>
