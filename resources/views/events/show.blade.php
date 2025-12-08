@@ -193,7 +193,7 @@
                 <!-- Form untuk Submit Review (Hanya jika $canReview true) -->
                 {{-- Variabel $canReview dari EventController (method show) --}}
                 @if ($canReview)
-                    <form action="{{ route('reviews.store', $event) }}" method="POST" class="mb-8 p-6 bg-white border border-gray-200 rounded-lg shadow-md">
+                    <form action="{{ route('events.reviews.store', $event) }}" method="POST" class="mb-8 p-6 bg-white border border-gray-200 rounded-lg shadow-md">
                         @csrf
                         <h4 class="text-lg font-semibold text-gray-800 mb-4">Bagaimana event ini menurut Anda?</h4>
                         
@@ -213,10 +213,9 @@
     
                         <!-- Input Komentar -->
                         <div class="mb-4">
-                            {{-- PERBAIKAN: 'name' dari form adalah 'comment' agar sesuai Controller --}}
-                            <label for="comment" class="block text-sm font-medium text-gray-700">Komentar Anda (Opsional)</label>
-                            <textarea name="comment" id="comment" rows="4" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" placeholder="Ceritakan pengalaman Anda...">{{ old('comment') }}</textarea>
-                            @error('comment') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
+                            <label for="komentar" class="block text-sm font-medium text-gray-700">Komentar Anda (Opsional)</label>
+                            <textarea name="komentar" id="komentar" rows="4" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" placeholder="Ceritakan pengalaman Anda...">{{ old('komentar') }}</textarea>
+                            @error('komentar') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
                         </div>
     
                         <x-primary-button type="submit">

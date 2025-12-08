@@ -9,9 +9,9 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <!-- Header Card -->
-            <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg shadow-lg p-6 mb-8">
-                <h3 class="text-2xl font-bold mb-2 text-black">Pantau Ulasan Pengguna</h3>
-                <p class="text-gray-700">Kelola dan monitor semua ulasan yang diberikan oleh peserta event</p>
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h3 class="text-2xl font-bold mb-2 text-gray-800">Pantau Ulasan Pengguna</h3>
+                <p class="text-gray-600">Kelola dan monitor semua ulasan yang diberikan oleh peserta event</p>
             </div>
 
             <!-- Filter Section -->
