@@ -16,26 +16,34 @@
     
     <div class="min-h-screen flex">
         
-        {{-- BAGIAN KIRI: GAMBAR & BRANDING (Hanya tampil di Desktop) --}}
-        <div class="hidden lg:flex lg:w-1/2 relative bg-indigo-900 overflow-hidden">
-            {{-- Menggunakan gambar yang sudah ada di public/images/eventpro.jpg --}}
-            <img src="{{ asset('images/eventpro.jpg') }}" 
-                 alt="Event Background" 
-                 class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay">
-            
-            <div class="relative z-10 w-full flex flex-col justify-center px-12 text-white">
-                <div class="mb-6">
-                    {{-- Logo SVG Sederhana --}}
-                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                </div>
-                <h1 class="text-5xl font-extrabold mb-4 leading-tight">Kelola Event <br>Tanpa Batas.</h1>
-                <p class="text-lg text-indigo-100 max-w-md">Platform manajemen event all-in-one untuk organizer profesional. Buat, jual tiket, dan atur check-in dalam satu tempat.</p>
-            </div>
-            
-            {{-- Hiasan Dekoratif --}}
-            <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
-            <div class="absolute -top-24 -right-24 w-64 h-64 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+       {{-- BAGIAN KIRI: MODEL SEPERTI GAMBAR CONTOH --}}
+<div class="hidden lg:flex lg:w-1/2 relative bg-[#3A63FF] overflow-hidden">
+    
+    {{-- Lingkaran Dekoratif --}}
+    <div class="absolute top-10 left-10 w-40 h-40 bg-white/10 rounded-full"></div>
+    <div class="absolute bottom-20 right-10 w-56 h-56 bg-white/10 rounded-full"></div>
+    <div class="absolute bottom-0 left-1/3 w-72 h-72 bg-white/5 rounded-full blur-2xl"></div>
+
+    {{-- Konten Welcome --}}
+    <div class="relative z-10 flex flex-col justify-center px-12 text-white">
+        
+        {{-- Logo --}}
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 bg-white rounded-full"></div>
         </div>
+
+        {{-- Text Headline --}}
+        <h1 class="text-6xl font-extrabold leading-tight mb-4">
+            Hello,<br> welcome!
+        </h1>
+
+        {{-- Subtext --}}
+        <p class="text-lg text-white/80 max-w-sm">
+            Rencanakan, kelola, dan nikmati event dengan lebih mudah.
+        </p>
+
+    </div>
+</div>
 
         {{-- BAGIAN KANAN: FORM LOGIN --}}
         <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
@@ -71,25 +79,27 @@
                     </div>
 
                     {{-- Password --}}
-                    <div>
-                        <div class="flex justify-between items-center">
-                            <x-input-label for="password" :value="__('Password')" class="text-gray-700 font-semibold" />
-                            @if (Route::has('password.request'))
-                                <a class="text-sm text-indigo-600 hover:text-indigo-800 font-medium" href="{{ route('password.request') }}">
-                                    {{ __('Lupa Password?') }}
-                                </a>
-                            @endif
-                        </div>
-                        <div class="relative mt-1">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                            </span>
-                            <x-text-input id="password" class="block mt-1 w-full pl-10 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm py-3" 
-                                          type="password" name="password" required autocomplete="current-password" 
-                                          placeholder="••••••••" />
-                        </div>
-                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                    </div>
+<div>
+    <div class="flex justify-between items-center">
+        <x-input-label for="password" :value="__('Password')" class="text-gray-700 font-semibold" />
+    </div>
+
+    <div class="relative mt-1">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        </span>
+        <x-text-input id="password"
+            class="block mt-1 w-full pl-10 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm py-3"
+            type="password" name="password" required autocomplete="current-password"
+            placeholder="••••••••" />
+    </div>
+
+    <x-input-error :messages="$errors->get('password')" class="mt-2" />
+</div>
+
 
                     {{-- Remember Me --}}
                     <div class="block">
@@ -102,7 +112,7 @@
                     {{-- Submit Button --}}
                     <div>
                         <button type="submit" 
-                                class="w-full justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 transform hover:scale-[1.02]">
+                                class="w-full justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#3A63FF] hover:bg-[#335bcc] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 transform hover:scale-[1.02]">
                             {{ __('Masuk Sekarang') }}
                         </button>
                     </div>

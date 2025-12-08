@@ -17,24 +17,33 @@
     <div class="min-h-screen flex">
         
         {{-- BAGIAN KIRI: GAMBAR (Hanya tampil di Desktop) --}}
-        <div class="hidden lg:flex lg:w-1/2 relative bg-indigo-900 overflow-hidden">
-            {{-- Pastikan gambar tersedia di public/images/eventpro.jpg --}}
-            <img src="{{ asset('images/eventpro.jpg') }}" 
-                 alt="Event Background" 
-                 class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay">
-            
-            <div class="relative z-10 w-full flex flex-col justify-center px-12 text-white">
-                <div class="mb-6">
-                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                </div>
-                <h1 class="text-5xl font-extrabold mb-4 leading-tight">Bergabunglah <br>Bersama Kami.</h1>
-                <p class="text-lg text-indigo-100 max-w-md">Mulai perjalanan Anda dalam membuat event yang luar biasa atau temukan pengalaman baru hari ini.</p>
-            </div>
-            
-            {{-- Hiasan Dekoratif --}}
-            <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
-            <div class="absolute -top-24 -right-24 w-64 h-64 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+       <div class="hidden lg:flex lg:w-1/2 relative bg-[#3A63FF] overflow-hidden">
+    
+    {{-- Lingkaran Dekoratif --}}
+    <div class="absolute top-10 left-10 w-40 h-40 bg-white/10 rounded-full"></div>
+    <div class="absolute bottom-20 right-10 w-56 h-56 bg-white/10 rounded-full"></div>
+    <div class="absolute bottom-0 left-1/3 w-72 h-72 bg-white/5 rounded-full blur-2xl"></div>
+
+    {{-- Konten Welcome --}}
+    <div class="relative z-10 flex flex-col justify-center px-12 text-white">
+
+        {{-- Logo --}}
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 bg-white rounded-full"></div>
         </div>
+
+        {{-- Text Headline --}}
+        <h1 class="text-6xl font-extrabold leading-tight mb-4">
+            Create,<br> Your Account
+        </h1>
+
+        {{-- Subtext --}}
+        <p class="text-lg text-white/80 max-w-sm">
+             Buat akun Anda sekarang dan mulai kelola event dengan mudah dan profesional.
+        </p>
+
+    </div>
+</div>
 
         {{-- BAGIAN KANAN: FORM REGISTER --}}
         <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50 overflow-y-auto">
@@ -142,7 +151,7 @@
                     {{-- Submit Button --}}
                     <div class="pt-2">
                         <button type="submit" 
-                                class="w-full justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 transform hover:scale-[1.02]">
+                                class="w-full justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#3A63FF] hover:bg-[#335bcc] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 transform hover:scale-[1.02]">
                             {{ __('Daftar Sekarang') }}
                         </button>
                     </div>
